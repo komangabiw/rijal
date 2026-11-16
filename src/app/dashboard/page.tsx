@@ -1,11 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useAuth } from '@/context/auth-context';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   fetchProjects,
   fetchAttendances,
@@ -25,13 +22,6 @@ import {
   ClipboardList,
   Users,
   BarChart2,
-  CalendarCheck2,
-  FolderGit2,
-  ReceiptText,
-  Boxes,
-  Truck,
-  ArrowUpRight,
-  Sparkles,
   RefreshCw,
 } from 'lucide-react';
 import {
@@ -44,20 +34,19 @@ import {
   Tooltip,
 } from 'recharts';
 
-// Data points for the 8-week task throughput curve matching 21st.dev layout
+// Data poin untuk grafik aktivitas 8 minggu
 const THROUGHPUT_DATA = [
-  { week: 'W1', completed: 25, opened: 36 },
-  { week: 'W2', completed: 28, opened: 42 },
-  { week: 'W3', completed: 33, opened: 30 },
-  { week: 'W4', completed: 38, opened: 48 },
-  { week: 'W5', completed: 42, opened: 38 },
-  { week: 'W6', completed: 46, opened: 54 },
-  { week: 'W7', completed: 50, opened: 49 },
-  { week: 'W8', completed: 55, opened: 52 },
+  { week: 'Mgg 1', selesai: 25, dibuka: 36 },
+  { week: 'Mgg 2', selesai: 28, dibuka: 42 },
+  { week: 'Mgg 3', selesai: 33, dibuka: 30 },
+  { week: 'Mgg 4', selesai: 38, dibuka: 48 },
+  { week: 'Mgg 5', selesai: 42, dibuka: 38 },
+  { week: 'Mgg 6', selesai: 46, dibuka: 54 },
+  { week: 'Mgg 7', selesai: 50, dibuka: 49 },
+  { week: 'Mgg 8', selesai: 55, dibuka: 52 },
 ];
 
 export default function DashboardOverviewPage() {
-  const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [attendances, setAttendances] = useState<Attendance[]>([]);
   const [stocks, setStocks] = useState<WarehouseStock[]>([]);
@@ -98,12 +87,12 @@ export default function DashboardOverviewPage() {
 
   return (
     <div className="space-y-6">
-      {/* 4 KPI Cards Grid matching 21st.dev UI */}
+      {/* 4 Kartu KPI Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
-        {/* Card 1: Total projects */}
-        <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl p-5 hover:border-zinc-700 transition-colors">
+        {/* Kartu 1: Total Proyek */}
+        <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl p-5 hover:border-zinc-700 transition-colors shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-zinc-400">Total projects</span>
+            <span className="text-sm font-medium text-zinc-400">Total Proyek</span>
             <FileText className="w-5 h-5 text-zinc-500" />
           </div>
           <div className="mt-4">
@@ -111,15 +100,15 @@ export default function DashboardOverviewPage() {
               {totalProjectsCount}
             </div>
             <p className="text-xs text-zinc-500 mt-1">
-              +2 from last month
+              +2 dari bulan lalu
             </p>
           </div>
         </Card>
 
-        {/* Card 2: Active tasks */}
-        <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl p-5 hover:border-zinc-700 transition-colors">
+        {/* Kartu 2: Tugas Aktif */}
+        <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl p-5 hover:border-zinc-700 transition-colors shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-zinc-400">Active tasks</span>
+            <span className="text-sm font-medium text-zinc-400">Tugas Aktif</span>
             <ClipboardList className="w-5 h-5 text-zinc-500" />
           </div>
           <div className="mt-4">
@@ -127,15 +116,15 @@ export default function DashboardOverviewPage() {
               {activeTasksCount}
             </div>
             <p className="text-xs text-zinc-500 mt-1">
-              +12 from yesterday
+              +12 dari kemarin
             </p>
           </div>
         </Card>
 
-        {/* Card 3: Team members */}
-        <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl p-5 hover:border-zinc-700 transition-colors">
+        {/* Kartu 3: Anggota Tim */}
+        <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl p-5 hover:border-zinc-700 transition-colors shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-zinc-400">Team members</span>
+            <span className="text-sm font-medium text-zinc-400">Anggota Tim</span>
             <Users className="w-5 h-5 text-zinc-500" />
           </div>
           <div className="mt-4">
@@ -143,15 +132,15 @@ export default function DashboardOverviewPage() {
               {teamMembersCount}
             </div>
             <p className="text-xs text-zinc-500 mt-1">
-              +1 new member
+              +1 anggota baru
             </p>
           </div>
         </Card>
 
-        {/* Card 4: Completion rate */}
-        <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl p-5 hover:border-zinc-700 transition-colors">
+        {/* Kartu 4: Tingkat Penyelesaian */}
+        <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl p-5 hover:border-zinc-700 transition-colors shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-zinc-400">Completion rate</span>
+            <span className="text-sm font-medium text-zinc-400">Tingkat Penyelesaian</span>
             <BarChart2 className="w-5 h-5 text-zinc-500" />
           </div>
           <div className="mt-4">
@@ -159,19 +148,19 @@ export default function DashboardOverviewPage() {
               {completionRate}
             </div>
             <p className="text-xs text-zinc-500 mt-1">
-              +5% from last week
+              +5% dari minggu lalu
             </p>
           </div>
         </Card>
       </div>
 
-      {/* Main Chart Card: Task Throughput matching 21st.dev layout */}
-      <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl p-6 hover:border-zinc-700 transition-colors">
+      {/* Kartu Grafik Utama: Task Throughput */}
+      <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl p-6 hover:border-zinc-700 transition-colors shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-base font-semibold text-white">Task throughput</h2>
+            <h2 className="text-base font-semibold text-white">Aktivitas Penyelesaian Tugas</h2>
             <p className="text-xs text-zinc-400 mt-0.5">
-              Tasks opened against tasks completed over the last eight weeks
+              Perbandingan tugas dibuka vs diselesaikan selama 8 minggu terakhir
             </p>
           </div>
           <Button
@@ -182,11 +171,11 @@ export default function DashboardOverviewPage() {
             className="text-zinc-400 hover:text-white hover:bg-zinc-800 text-xs h-8"
           >
             <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
+            Segarkan
           </Button>
         </div>
 
-        {/* Curved Area Chart */}
+        {/* Grafik Area Lengkung */}
         <div className="h-64 sm:h-72 w-full pt-4">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={THROUGHPUT_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -220,21 +209,21 @@ export default function DashboardOverviewPage() {
                   color: '#ffffff',
                 }}
               />
-              {/* Completed line with gradient fill */}
+              {/* Garis tugas diselesaikan dengan gradient fill */}
               <Area
                 type="monotone"
-                dataKey="completed"
-                name="Tasks Completed"
+                dataKey="selesai"
+                name="Tugas Selesai"
                 stroke="#ffffff"
                 strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#curveFill)"
               />
-              {/* Opened line with dotted stroke */}
+              {/* Garis tugas dibuka dengan titik-titik */}
               <Line
                 type="monotone"
-                dataKey="opened"
-                name="Tasks Opened"
+                dataKey="dibuka"
+                name="Tugas Dibuka"
                 stroke="#a1a1aa"
                 strokeWidth={2}
                 strokeDasharray="4 4"
@@ -244,118 +233,6 @@ export default function DashboardOverviewPage() {
           </ResponsiveContainer>
         </div>
       </Card>
-
-      {/* Core Telecom Modules Quick Navigation Grid */}
-      <div className="space-y-3 pt-2">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-zinc-300">
-            PT Telekomunikasi Core Operations
-          </h3>
-          <span className="text-xs text-zinc-500">Live Supabase Database</span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-          {/* Absensi */}
-          <Link href="/dashboard/attendance" className="group">
-            <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-emerald-950/60 border border-emerald-800/60 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform">
-                  <CalendarCheck2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-white group-hover:text-emerald-400 transition-colors">
-                    Absensi Geofencing & Selfie
-                  </div>
-                  <div className="text-[11px] text-zinc-500">
-                    {attendances.length} presensi tersimpan
-                  </div>
-                </div>
-              </div>
-              <ArrowUpRight className="w-4 h-4 text-zinc-500 group-hover:text-white transition-colors" />
-            </div>
-          </Link>
-
-          {/* Implementasi Proyek */}
-          <Link href="/dashboard/projects" className="group">
-            <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-blue-950/60 border border-blue-800/60 flex items-center justify-center text-blue-400 group-hover:scale-105 transition-transform">
-                  <FolderGit2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-white group-hover:text-blue-400 transition-colors">
-                    Implementasi FO / BTS
-                  </div>
-                  <div className="text-[11px] text-zinc-500">
-                    {projects.length} proyek aktif
-                  </div>
-                </div>
-              </div>
-              <ArrowUpRight className="w-4 h-4 text-zinc-500 group-hover:text-white transition-colors" />
-            </div>
-          </Link>
-
-          {/* Finance */}
-          <Link href="/dashboard/finance" className="group">
-            <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-amber-950/60 border border-amber-800/60 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform">
-                  <ReceiptText className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-white group-hover:text-amber-400 transition-colors">
-                    Finance & Reimbursement
-                  </div>
-                  <div className="text-[11px] text-zinc-500">
-                    {expenses.length} pengajuan klaim
-                  </div>
-                </div>
-              </div>
-              <ArrowUpRight className="w-4 h-4 text-zinc-500 group-hover:text-white transition-colors" />
-            </div>
-          </Link>
-
-          {/* Warehouse */}
-          <Link href="/dashboard/warehouse" className="group">
-            <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-cyan-950/60 border border-cyan-800/60 flex items-center justify-center text-cyan-400 group-hover:scale-105 transition-transform">
-                  <Boxes className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-white group-hover:text-cyan-400 transition-colors">
-                    Warehouse & Material FO
-                  </div>
-                  <div className="text-[11px] text-zinc-500">
-                    {stocks.length} item material
-                  </div>
-                </div>
-              </div>
-              <ArrowUpRight className="w-4 h-4 text-zinc-500 group-hover:text-white transition-colors" />
-            </div>
-          </Link>
-
-          {/* Logistics */}
-          <Link href="/dashboard/logistics" className="group">
-            <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-indigo-950/60 border border-indigo-800/60 flex items-center justify-center text-indigo-400 group-hover:scale-105 transition-transform">
-                  <Truck className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-white group-hover:text-indigo-400 transition-colors">
-                    Logistik & Surat Jalan
-                  </div>
-                  <div className="text-[11px] text-zinc-500">
-                    {deliveries.length} surat jalan terbit
-                  </div>
-                </div>
-              </div>
-              <ArrowUpRight className="w-4 h-4 text-zinc-500 group-hover:text-white transition-colors" />
-            </div>
-          </Link>
-        </div>
-      </div>
     </div>
   );
 }

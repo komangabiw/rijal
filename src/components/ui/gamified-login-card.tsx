@@ -95,7 +95,7 @@ export default function GamifiedLoginCard({
         className={`relative z-10 w-full max-w-md bg-[#131b2e] border border-slate-800/90 rounded-2xl shadow-2xl p-8 flex flex-col gap-6 ${className}`}
       >
         <h2 className="text-3xl font-bold text-center text-white tracking-tight">
-          {success ? "Welcome!" : "Sign In"}
+          {success ? "Selamat Datang!" : "Masuk Akun"}
         </h2>
 
         {error && (
@@ -107,13 +107,13 @@ export default function GamifiedLoginCard({
         <form onSubmit={handleLogin} className="flex flex-col gap-4 mt-1">
           <div>
             <Label htmlFor="email" className="text-sm font-semibold text-slate-200 mb-1.5 block">
-              Email
+              Email Perusahaan
             </Label>
             <Input
               id="email"
               type="email"
               required
-              placeholder="you@example.com"
+              placeholder="nama@telekomunikasi.co.id"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="bg-[#0b101d] border-slate-800 text-white placeholder:text-slate-500 rounded-xl h-11 hover:scale-[1.02] focus:scale-[1.02] focus:border-slate-600 transition-all duration-200"
@@ -122,13 +122,13 @@ export default function GamifiedLoginCard({
 
           <div>
             <Label htmlFor="password" className="text-sm font-semibold text-slate-200 mb-1.5 block">
-              Password
+              Kata Sandi
             </Label>
             <Input
               id="password"
               type="password"
               required
-              placeholder="********"
+              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="bg-[#0b101d] border-slate-800 text-white placeholder:text-slate-500 rounded-xl h-11 hover:scale-[1.02] focus:scale-[1.02] focus:border-slate-600 transition-all duration-200"
@@ -146,13 +146,13 @@ export default function GamifiedLoginCard({
                 Memverifikasi...
               </span>
             ) : (
-              "Login"
+              "Masuk ke Portal"
             )}
           </Button>
         </form>
 
         <p className="text-xs text-center text-slate-400 mt-1">
-          Don’t have an account?{" "}
+          Belum memiliki akun resmi?{" "}
           <a
             href="#"
             onClick={(e) => {
@@ -161,7 +161,7 @@ export default function GamifiedLoginCard({
             }}
             className="text-purple-400 hover:text-purple-300 font-semibold hover:underline ml-1"
           >
-            Sign up
+            Hubungi HR Admin
           </a>
         </p>
       </motion.div>

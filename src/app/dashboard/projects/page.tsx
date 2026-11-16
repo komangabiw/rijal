@@ -177,7 +177,7 @@ export default function ProjectsPage() {
             className="text-xs bg-zinc-900 border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800"
           >
             <RotateCw className="w-3.5 h-3.5 mr-1" />
-            Refresh
+            Segarkan
           </Button>
           <Button
             onClick={() => setShowLogModal(true)}

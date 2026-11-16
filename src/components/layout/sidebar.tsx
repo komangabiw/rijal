@@ -149,37 +149,39 @@ export function Sidebar() {
           );
         })}
 
-        {/* Your team section matching 21st.dev ShadcnStore layout */}
-        <div className="pt-6 pb-4">
-          <div className="px-2.5 pb-2 text-[11px] font-medium text-zinc-500 tracking-wide flex items-center justify-between">
-            <span>Your team</span>
-            <span className="text-[10px] bg-zinc-900 px-1.5 py-0.2 rounded border border-zinc-800 text-zinc-400">
-              {DEMO_PROFILES.length}
-            </span>
-          </div>
-          <div className="space-y-1">
-            {DEMO_PROFILES.map((member) => (
-              <div
-                key={member.id}
-                className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-zinc-900/40 text-xs text-zinc-300 transition-colors group"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <img
-                    src={member.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
-                    alt={member.full_name}
-                    className="w-6 h-6 rounded-full object-cover border border-zinc-800 shrink-0"
-                  />
-                  <span className="truncate text-[11px] text-zinc-300 group-hover:text-white">
-                    {member.full_name}
+        {/* Team section exclusively visible for Super Admin */}
+        {role === 'super_admin' && (
+          <div className="pt-6 pb-4 border-t border-zinc-900 mt-2">
+            <div className="px-2.5 pb-2 text-[11px] font-medium text-zinc-500 tracking-wide flex items-center justify-between">
+              <span>Tim Anda</span>
+              <span className="text-[10px] bg-zinc-900 px-1.5 py-0.2 rounded border border-zinc-800 text-zinc-400">
+                {DEMO_PROFILES.length}
+              </span>
+            </div>
+            <div className="space-y-1">
+              {DEMO_PROFILES.map((member) => (
+                <div
+                  key={member.id}
+                  className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-zinc-900/40 text-xs text-zinc-300 transition-colors group"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <img
+                      src={member.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
+                      alt={member.full_name}
+                      className="w-6 h-6 rounded-full object-cover border border-zinc-800 shrink-0"
+                    />
+                    <span className="truncate text-[11px] text-zinc-300 group-hover:text-white">
+                      {member.full_name}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-zinc-500 truncate max-w-[80px] text-right font-normal">
+                    {(member.division || 'Operations').split(' ')[0]}
                   </span>
                 </div>
-                <span className="text-[10px] text-zinc-500 truncate max-w-[80px] text-right font-normal">
-                  {(member.division || 'Operations').split(' ')[0]}
-                </span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

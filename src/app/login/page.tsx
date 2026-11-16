@@ -155,7 +155,7 @@ export default function LoginPage() {
         <div className="relative z-10 flex items-center justify-between">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-semibold backdrop-blur-md">
             <Radio className="w-3.5 h-3.5 animate-pulse" />
-            <span>Telecommunication Infrastructure System</span>
+            <span>Sistem Infrastruktur Telekomunikasi Terpadu</span>
           </div>
           <div className="text-[11px] text-slate-400 font-mono">
             PT TELEKOMUNIKASI • EDGE v2026
@@ -248,7 +248,7 @@ export default function LoginPage() {
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
             <span className="text-slate-300 font-mono text-[11px]">
-              99.98% Network SLA Uptime
+              99.98% SLA Ketersediaan Jaringan
             </span>
           </div>
           <div className="text-[11px] font-mono text-slate-400">

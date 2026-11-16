@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
+import React, { useState, useEffect, useRef } from 'react';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   fetchProjects,
   fetchAttendances,
@@ -23,28 +24,14 @@ import {
   Users,
   BarChart2,
   RefreshCw,
+  Maximize2,
+  ExternalLink,
+  ShieldCheck,
+  TrendingUp,
+  Database,
+  Layers,
+  Sparkles,
 } from 'lucide-react';
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-} from 'recharts';
-
-// Data poin untuk grafik aktivitas 8 minggu
-const THROUGHPUT_DATA = [
-  { week: 'Mgg 1', selesai: 25, dibuka: 36 },
-  { week: 'Mgg 2', selesai: 28, dibuka: 42 },
-  { week: 'Mgg 3', selesai: 33, dibuka: 30 },
-  { week: 'Mgg 4', selesai: 38, dibuka: 48 },
-  { week: 'Mgg 5', selesai: 42, dibuka: 38 },
-  { week: 'Mgg 6', selesai: 46, dibuka: 54 },
-  { week: 'Mgg 7', selesai: 50, dibuka: 49 },
-  { week: 'Mgg 8', selesai: 55, dibuka: 52 },
-];
 
 export default function DashboardOverviewPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -52,7 +39,13 @@ export default function DashboardOverviewPage() {
   const [stocks, setStocks] = useState<WarehouseStock[]>([]);
   const [expenses, setExpenses] = useState<ExpenseClaim[]>([]);
   const [deliveries, setDeliveries] = useState<DeliveryOrder[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [iframeKey, setIframeKey] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const iframeContainerRef = useRef<HTMLDivElement | null>(null);
+
+  const POWER_BI_URL =
+    'https://app.powerbi.com/view?r=eyJrIjoiZGRmMTZlOWItNmFlOS00MTRkLTkxMjktYjdiNjgyNGY1ZDYwIiwidCI6ImRmODY3OWNkLWE4MGUtNDVkOC05OWFjLWM4M2VkN2ZmOTVhMCJ9';
 
   const loadAllData = async () => {
     setIsLoading(true);
@@ -80,159 +73,201 @@ export default function DashboardOverviewPage() {
     loadAllData();
   }, []);
 
+  const handleRefreshIframe = () => {
+    setIframeKey((prev) => prev + 1);
+  };
+
+  const handleToggleFullscreen = () => {
+    if (!iframeContainerRef.current) return;
+    if (!document.fullscreenElement) {
+      iframeContainerRef.current.requestFullscreen().catch((err) => {
+        console.warn('Gagal masuk mode layar penuh:', err);
+      });
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen().catch(() => {});
+      setIsFullscreen(false);
+    }
+  };
+
   const totalProjectsCount = projects.length > 0 ? projects.length : 24;
   const activeTasksCount = 127;
   const teamMembersCount = 16;
   const completionRate = '87%';
 
   return (
-    <div className="space-y-6">
-      {/* 4 Kartu KPI Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
-        {/* Kartu 1: Total Proyek */}
-        <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl p-5 hover:border-zinc-700 transition-colors shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-zinc-400">Total Proyek</span>
-            <FileText className="w-5 h-5 text-zinc-500" />
+    <div className="space-y-6 text-zinc-100">
+      {/* Header Info: Peran ERP & Power BI Live Analytics */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-zinc-900 border border-zinc-800 p-4 sm:p-5 rounded-2xl shadow-sm">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400">
+              <Sparkles className="w-4 h-4" />
+            </span>
+            <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight">
+              Executive Business Intelligence & Data Administrasi ERP
+            </h1>
+            <Badge className="bg-emerald-950/80 text-emerald-300 border-emerald-800 text-[10px] hidden sm:inline-flex">
+              ● Power BI Live Cloud
+            </Badge>
           </div>
-          <div className="mt-4">
-            <div className="text-3xl font-bold tracking-tight text-white">
-              {totalProjectsCount}
-            </div>
-            <p className="text-xs text-zinc-500 mt-1">
-              +2 dari bulan lalu
-            </p>
-          </div>
-        </Card>
+          <p className="text-xs text-zinc-400 leading-relaxed max-w-3xl">
+            Sistem terintegrasi: <strong className="text-white">Microsoft Power BI</strong> sebagai pusat visualisasi analitik & intelligence, serta <strong className="text-white">Portal ERP</strong> sebagai engine administrasi transaksi operasional K3, absensi, reimbursement, proyek, dan logistik.
+          </p>
+        </div>
 
-        {/* Kartu 2: Tugas Aktif */}
-        <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl p-5 hover:border-zinc-700 transition-colors shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-zinc-400">Tugas Aktif</span>
-            <ClipboardList className="w-5 h-5 text-zinc-500" />
-          </div>
-          <div className="mt-4">
-            <div className="text-3xl font-bold tracking-tight text-white">
-              {activeTasksCount}
-            </div>
-            <p className="text-xs text-zinc-500 mt-1">
-              +12 dari kemarin
-            </p>
-          </div>
-        </Card>
-
-        {/* Kartu 3: Anggota Tim */}
-        <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl p-5 hover:border-zinc-700 transition-colors shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-zinc-400">Anggota Tim</span>
-            <Users className="w-5 h-5 text-zinc-500" />
-          </div>
-          <div className="mt-4">
-            <div className="text-3xl font-bold tracking-tight text-white">
-              {teamMembersCount}
-            </div>
-            <p className="text-xs text-zinc-500 mt-1">
-              +1 anggota baru
-            </p>
-          </div>
-        </Card>
-
-        {/* Kartu 4: Tingkat Penyelesaian */}
-        <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl p-5 hover:border-zinc-700 transition-colors shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-zinc-400">Tingkat Penyelesaian</span>
-            <BarChart2 className="w-5 h-5 text-zinc-500" />
-          </div>
-          <div className="mt-4">
-            <div className="text-3xl font-bold tracking-tight text-white">
-              {completionRate}
-            </div>
-            <p className="text-xs text-zinc-500 mt-1">
-              +5% dari minggu lalu
-            </p>
-          </div>
-        </Card>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefreshIframe}
+            className="text-xs bg-zinc-950 border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800 h-8.5 rounded-xl"
+          >
+            <RefreshCw className="w-3.5 h-3.5 mr-1.5 text-zinc-400" />
+            Reload BI
+          </Button>
+          <a
+            href={POWER_BI_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white px-3 py-2 rounded-xl shadow-md shadow-amber-600/20 transition-colors"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            Buka Tab Penuh
+          </a>
+        </div>
       </div>
 
-      {/* Kartu Grafik Utama: Task Throughput */}
-      <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl p-6 hover:border-zinc-700 transition-colors shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-base font-semibold text-white">Aktivitas Penyelesaian Tugas</h2>
-            <p className="text-xs text-zinc-400 mt-0.5">
-              Perbandingan tugas dibuka vs diselesaikan selama 8 minggu terakhir
-            </p>
+      {/* EMBED POWER BI LIVE DASHBOARD CONTAINER */}
+      <Card
+        ref={iframeContainerRef}
+        className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl overflow-hidden shadow-xl"
+      >
+        <CardHeader className="bg-zinc-950/80 border-b border-zinc-800/80 p-3.5 sm:p-4 flex flex-row items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <div>
+              <CardTitle className="text-sm font-bold text-white flex items-center gap-2">
+                <span>New Dashboard DSN</span>
+                <span className="text-[11px] font-normal text-zinc-400 hidden sm:inline">
+                  — Power BI Embedded Interactive Report
+                </span>
+              </CardTitle>
+            </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={loadAllData}
-            disabled={isLoading}
-            className="text-zinc-400 hover:text-white hover:bg-zinc-800 text-xs h-8"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isLoading ? 'animate-spin' : ''}`} />
-            Segarkan
-          </Button>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleToggleFullscreen}
+              className="text-xs text-zinc-400 hover:text-white hover:bg-zinc-800 h-8 px-2.5 rounded-lg"
+              title="Perbesar Layar Penuh (Fullscreen)"
+            >
+              <Maximize2 className="w-3.5 h-3.5 mr-1" />
+              <span className="hidden sm:inline">Fullscreen</span>
+            </Button>
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-0 bg-black">
+          {/* Responsive Power BI iframe frame */}
+          <div className="w-full relative aspect-[16/10] sm:aspect-[16/9] min-h-[500px] sm:min-h-[640px] lg:min-h-[760px]">
+            <iframe
+              key={iframeKey}
+              title="New Dashboard DSN"
+              src={POWER_BI_URL}
+              width="100%"
+              height="100%"
+              frameBorder="0"
+              allowFullScreen={true}
+              allow="fullscreen; geolocation; microphone; camera"
+              className="w-full h-full border-0 absolute inset-0"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* DATA ADMINISTRASI OPERASIONAL (RINGKASAN ERP) */}
+      <div className="space-y-3 pt-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Database className="w-4 h-4 text-blue-400" />
+            <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+              Ringkasan Data Administrasi ERP Terintegrasi
+            </h2>
+          </div>
+          <Badge variant="outline" className="text-[10px] bg-zinc-900 border-zinc-800 text-zinc-400">
+            Sinkronisasi Database Aktif
+          </Badge>
         </div>
 
-        {/* Grafik Area Lengkung */}
-        <div className="h-64 sm:h-72 w-full pt-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={THROUGHPUT_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <defs>
-                <linearGradient id="curveFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ffffff" stopOpacity={0.18} />
-                  <stop offset="95%" stopColor="#ffffff" stopOpacity={0.0} />
-                </linearGradient>
-              </defs>
-              <XAxis
-                dataKey="week"
-                stroke="#52525b"
-                tick={{ fill: '#71717a', fontSize: 11 }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                domain={[15, 60]}
-                ticks={[15, 30, 45, 60]}
-                stroke="#52525b"
-                tick={{ fill: '#71717a', fontSize: 11 }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#18181b',
-                  borderColor: '#27272a',
-                  borderRadius: '0.75rem',
-                  fontSize: '12px',
-                  color: '#ffffff',
-                }}
-              />
-              {/* Garis tugas diselesaikan dengan gradient fill */}
-              <Area
-                type="monotone"
-                dataKey="selesai"
-                name="Tugas Selesai"
-                stroke="#ffffff"
-                strokeWidth={2}
-                fillOpacity={1}
-                fill="url(#curveFill)"
-              />
-              {/* Garis tugas dibuka dengan titik-titik */}
-              <Line
-                type="monotone"
-                dataKey="dibuka"
-                name="Tugas Dibuka"
-                stroke="#a1a1aa"
-                strokeWidth={2}
-                strokeDasharray="4 4"
-                dot={false}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Kartu 1: Total Proyek Administrasi */}
+          <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl p-4.5 hover:border-zinc-700 transition-colors shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-zinc-400">Proyek Administrasi</span>
+              <FileText className="w-4 h-4 text-blue-400" />
+            </div>
+            <div className="mt-3">
+              <div className="text-2xl font-bold tracking-tight text-white">
+                {totalProjectsCount} Proyek
+              </div>
+              <p className="text-[11px] text-zinc-500 mt-0.5">
+                FO Rollout, BTS 5G & Maintenance
+              </p>
+            </div>
+          </Card>
+
+          {/* Kartu 2: Tugas Aktif */}
+          <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl p-4.5 hover:border-zinc-700 transition-colors shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-zinc-400">Tugas Lapangan Aktif</span>
+              <ClipboardList className="w-4 h-4 text-emerald-400" />
+            </div>
+            <div className="mt-3">
+              <div className="text-2xl font-bold tracking-tight text-white">
+                {activeTasksCount} Tugas
+              </div>
+              <p className="text-[11px] text-zinc-500 mt-0.5">
+                Monitoring span, splicing & ATP
+              </p>
+            </div>
+          </Card>
+
+          {/* Kartu 3: Anggota Tim */}
+          <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl p-4.5 hover:border-zinc-700 transition-colors shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-zinc-400">Teknisi & Anggota Tim</span>
+              <Users className="w-4 h-4 text-purple-400" />
+            </div>
+            <div className="mt-3">
+              <div className="text-2xl font-bold tracking-tight text-white">
+                {teamMembersCount} Personil
+              </div>
+              <p className="text-[11px] text-zinc-500 mt-0.5">
+                Terverifikasi presensi geofencing
+              </p>
+            </div>
+          </Card>
+
+          {/* Kartu 4: Tingkat Penyelesaian */}
+          <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl p-4.5 hover:border-zinc-700 transition-colors shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-zinc-400">Tingkat Penyelesaian</span>
+              <BarChart2 className="w-4 h-4 text-cyan-400" />
+            </div>
+            <div className="mt-3">
+              <div className="text-2xl font-bold tracking-tight text-white">
+                {completionRate}
+              </div>
+              <p className="text-[11px] text-emerald-400 mt-0.5">
+                Target SLA on-track tercapai
+              </p>
+            </div>
+          </Card>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

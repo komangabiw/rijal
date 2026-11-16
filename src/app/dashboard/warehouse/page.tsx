@@ -18,7 +18,6 @@ import {
   Search,
   X,
   Warehouse as WarehouseIcon,
-  RotateCw,
   ChevronDown,
 } from 'lucide-react';
 
@@ -46,6 +45,11 @@ export default function WarehousePage() {
 
   useEffect(() => {
     loadStocks();
+    // Auto-update berkala dari backend setiap 5 menit (300.000 ms)
+    const interval = setInterval(() => {
+      loadStocks();
+    }, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   const filteredStocks = stocks.filter((s) => {
@@ -111,15 +115,6 @@ export default function WarehousePage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            onClick={loadStocks}
-            variant="outline"
-            size="sm"
-            className="text-xs bg-zinc-900 border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800"
-          >
-            <RotateCw className="w-3.5 h-3.5 mr-1" />
-            Segarkan
-          </Button>
           <Button
             onClick={() => setShowInboundModal(true)}
             className="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold shadow-md shadow-cyan-600/30"

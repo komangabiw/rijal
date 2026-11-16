@@ -26,7 +26,6 @@ import {
   Upload,
   X,
   Check,
-  RotateCw,
   ChevronDown,
   Wallet,
   AlertCircle,
@@ -58,6 +57,11 @@ export default function FinancePage() {
 
   useEffect(() => {
     loadData();
+    // Auto-update berkala dari backend setiap 5 menit (300.000 ms)
+    const interval = setInterval(() => {
+      loadData();
+    }, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   const loadData = async () => {
@@ -215,15 +219,6 @@ export default function FinancePage() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <Button
-            onClick={loadData}
-            variant="outline"
-            size="sm"
-            className="text-xs bg-zinc-900 border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800"
-          >
-            <RotateCw className="w-3.5 h-3.5 mr-1" />
-            Segarkan
-          </Button>
           <Button
             onClick={() => {
               setClaimType('reimbursement');

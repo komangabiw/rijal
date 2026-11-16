@@ -23,7 +23,6 @@ import {
   ClipboardList,
   Users,
   BarChart2,
-  RefreshCw,
   Maximize2,
   ExternalLink,
   ShieldCheck,
@@ -71,11 +70,13 @@ export default function DashboardOverviewPage() {
 
   useEffect(() => {
     loadAllData();
+    // Auto-update berkala dari backend setiap 5 menit (300.000 ms)
+    const interval = setInterval(() => {
+      loadAllData();
+      setIframeKey((prev) => prev + 1);
+    }, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
-
-  const handleRefreshIframe = () => {
-    setIframeKey((prev) => prev + 1);
-  };
 
   const handleToggleFullscreen = () => {
     if (!iframeContainerRef.current) return;
@@ -117,15 +118,6 @@ export default function DashboardOverviewPage() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefreshIframe}
-            className="text-xs bg-zinc-950 border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800 h-8.5 rounded-xl"
-          >
-            <RefreshCw className="w-3.5 h-3.5 mr-1.5 text-zinc-400" />
-            Reload BI
-          </Button>
           <a
             href={POWER_BI_URL}
             target="_blank"

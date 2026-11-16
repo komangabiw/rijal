@@ -32,7 +32,6 @@ import {
   X,
   Upload,
   Check,
-  RotateCw,
   ChevronDown,
 } from 'lucide-react';
 
@@ -71,6 +70,11 @@ export default function LogisticsPage() {
 
   useEffect(() => {
     loadData();
+    // Auto-update berkala dari backend setiap 5 menit (300.000 ms)
+    const interval = setInterval(() => {
+      loadData();
+    }, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleOpenPod = (delivery: DeliveryOrder) => {
@@ -171,15 +175,6 @@ export default function LogisticsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            onClick={loadData}
-            variant="outline"
-            size="sm"
-            className="text-xs bg-zinc-900 border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800"
-          >
-            <RotateCw className="w-3.5 h-3.5 mr-1" />
-            Segarkan
-          </Button>
           <Button
             onClick={() => setShowDispatchModal(true)}
             className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/30"

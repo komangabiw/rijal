@@ -81,6 +81,14 @@ export default function AttendancePage() {
     loadData();
     loadOffices();
     handleGetLocation();
+
+    // Auto-update berkala dari backend setiap 5 menit (300.000 ms)
+    const interval = setInterval(() => {
+      loadData();
+      loadOffices();
+    }, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const loadOffices = async () => {
@@ -242,15 +250,6 @@ export default function AttendancePage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            onClick={loadData}
-            variant="outline"
-            size="sm"
-            className="text-xs bg-zinc-900 border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800"
-          >
-            <RotateCw className="w-3.5 h-3.5 mr-1" />
-            Segarkan
-          </Button>
           <Button
             onClick={handleExportCSV}
             variant="outline"

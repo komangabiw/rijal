@@ -141,6 +141,12 @@ export default function CMSPage() {
   useEffect(() => {
     loadUsers();
     loadOffices();
+    // Auto-update berkala dari backend setiap 5 menit (300.000 ms)
+    const interval = setInterval(() => {
+      loadUsers();
+      loadOffices();
+    }, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   const loadOffices = async () => {

@@ -78,7 +78,11 @@ export default function FinancePage() {
 
   // Multi-level approval handler (PM -> Finance -> Paid)
   const handleApproveClaim = async (claimId: string, currentStatus: string) => {
-    const reviewerId = user?.id || (currentStatus === 'pending_pm' ? 'usr-pm-03' : 'usr-fin-04');
+    const reviewerId =
+      user?.id ||
+      (currentStatus === 'pending_pm'
+        ? 'a0000000-0000-0000-0000-000000000003'
+        : 'a0000000-0000-0000-0000-000000000004');
     const newStatus = currentStatus === 'pending_pm' ? 'pending_finance' : 'paid';
 
     // Optimistic UI update
@@ -138,7 +142,7 @@ export default function FinancePage() {
 
     try {
       const newClaim = await submitExpenseClaim({
-        userId: user?.id || 'usr-tech-06',
+        userId: user?.id || 'a0000000-0000-0000-0000-000000000006',
         projectId: selectedProjectId || undefined,
         category,
         amount: Number(amount) || 0,

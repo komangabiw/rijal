@@ -68,7 +68,7 @@ export default function WarehousePage() {
         warehouseId: selectedWarehouseId,
         quantity: qtyNum,
         referenceNumber: inboundRef,
-        receivedBy: user?.id || 'usr-wh-05',
+        receivedBy: user?.id || 'a0000000-0000-0000-0000-000000000005',
       });
 
       // Update local state

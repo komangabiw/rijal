@@ -105,8 +105,8 @@ export default function ProjectsPage() {
 
     const newLog = await submitProgressLog({
       projectId: selectedProject.id,
-      siteId: DEMO_SITES[0].id,
-      technicianId: user?.id || 'usr-tech-06',
+      siteId: 'd0000000-0000-0000-0000-000000000001',
+      technicianId: user?.id || 'a0000000-0000-0000-0000-000000000006',
       volumeRealized: volumeNum,
       description: logDesc || 'Penarikan kabel lanjutan dan perapihan span FO.',
       photoBefore: fileBefore || undefined,

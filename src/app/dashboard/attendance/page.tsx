@@ -100,19 +100,28 @@ export default function AttendancePage() {
     setIsSubmitting(true);
     const office = DEMO_OFFICES.find((o) => o.id === selectedOffice);
 
-    const newRecord = await submitClockIn({
-      userId: user?.id || 'usr-tech-06',
-      status: attendanceType,
-      latitude: coords.lat,
-      longitude: coords.lng,
-      officeId: selectedOffice,
-      address: office ? office.name : 'Site Lapangan FO Cluster',
-      notes: notes || 'Presensi terverifikasi via Web ERP',
-      photoBlob: selfieBlob,
-    });
+    try {
+      const newRecord = await submitClockIn({
+        userId: user?.id || 'a0000000-0000-0000-0000-000000000006',
+        status: attendanceType,
+        latitude: coords.lat,
+        longitude: coords.lng,
+        officeId: selectedOffice,
+        address: office ? office.name : 'Kantor Pusat PT Telekomunikasi',
+        notes: notes || 'Presensi terverifikasi via Web ERP',
+        photoBlob: selfieBlob,
+      });
 
-    setAttendances([newRecord, ...attendances.filter((a) => a.user_id !== user?.id)]);
-    setIsSubmitting(false);
+      setAttendances((prev) => [
+        newRecord,
+        ...prev.filter((a) => a.id !== newRecord.id && a.user_id !== newRecord.user_id),
+      ]);
+    } catch (err: any) {
+      console.error('Clock in error:', err);
+      alert('Gagal clock in: ' + (err.message || 'Terjadi kesalahan'));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleExportCSV = () => {

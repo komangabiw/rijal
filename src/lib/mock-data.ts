@@ -19,7 +19,7 @@ import {
 
 export const DEMO_PROFILES: Profile[] = [
   {
-    id: 'usr-admin-01',
+    id: 'a0000000-0000-0000-0000-000000000001',
     email: 'admin@telekomunikasi.co.id',
     full_name: 'Bambang Sudibyo (Super Admin)',
     phone: '+62811800100',
@@ -32,7 +32,7 @@ export const DEMO_PROFILES: Profile[] = [
     updated_at: '2026-01-01T08:00:00Z',
   },
   {
-    id: 'usr-hr-02',
+    id: 'a0000000-0000-0000-0000-000000000002',
     email: 'hr@telekomunikasi.co.id',
     full_name: 'Siti Rahmawati (HR Admin)',
     phone: '+62812800200',
@@ -45,7 +45,7 @@ export const DEMO_PROFILES: Profile[] = [
     updated_at: '2026-01-05T08:00:00Z',
   },
   {
-    id: 'usr-pm-03',
+    id: 'a0000000-0000-0000-0000-000000000003',
     email: 'pm@telekomunikasi.co.id',
     full_name: 'Dedi Kurniawan, ST (Project Manager)',
     phone: '+62813800300',
@@ -58,7 +58,7 @@ export const DEMO_PROFILES: Profile[] = [
     updated_at: '2026-01-10T08:00:00Z',
   },
   {
-    id: 'usr-fin-04',
+    id: 'a0000000-0000-0000-0000-000000000004',
     email: 'finance@telekomunikasi.co.id',
     full_name: 'Maya Indriyani, SE (Finance Lead)',
     phone: '+62814800400',
@@ -71,7 +71,7 @@ export const DEMO_PROFILES: Profile[] = [
     updated_at: '2026-01-15T08:00:00Z',
   },
   {
-    id: 'usr-wh-05',
+    id: 'a0000000-0000-0000-0000-000000000005',
     email: 'warehouse@telekomunikasi.co.id',
     full_name: 'Heri Prasetyo (Logistics Lead)',
     phone: '+62815800500',
@@ -84,7 +84,7 @@ export const DEMO_PROFILES: Profile[] = [
     updated_at: '2026-01-20T08:00:00Z',
   },
   {
-    id: 'usr-tech-06',
+    id: 'a0000000-0000-0000-0000-000000000006',
     email: 'technician@telekomunikasi.co.id',
     full_name: 'Rian Firmansyah (Field Technician)',
     phone: '+62816800600',
@@ -100,7 +100,7 @@ export const DEMO_PROFILES: Profile[] = [
 
 export const DEMO_OFFICES: OfficeLocation[] = [
   {
-    id: 'off-jkt-01',
+    id: '68b57343-8ba5-409e-8bff-526135283025',
     name: 'Kantor Pusat PT Telekomunikasi (Jakarta)',
     address: 'Jl. Gatot Subroto Kav. 52, Jakarta Selatan',
     latitude: -6.239308,
@@ -111,7 +111,7 @@ export const DEMO_OFFICES: OfficeLocation[] = [
     updated_at: '2026-01-01T00:00:00Z',
   },
   {
-    id: 'off-bks-02',
+    id: '025facc9-9616-4cc9-97df-1d559046e99b',
     name: 'Central Warehouse & Hub Bekasi',
     address: 'Kawasan Industri MM2100, Cikarang Barat, Bekasi',
     latitude: -6.31294,
@@ -122,7 +122,7 @@ export const DEMO_OFFICES: OfficeLocation[] = [
     updated_at: '2026-01-01T00:00:00Z',
   },
   {
-    id: 'off-bdg-03',
+    id: 'f75909e5-8e8b-46eb-aaac-8c0b321592ff',
     name: 'Regional Operations Hub Bandung',
     address: 'Jl. Supratman No. 66, Cibeunying, Bandung',
     latitude: -6.90389,

@@ -137,11 +137,11 @@ export default function LogisticsPage() {
         materialRequestId: requests[0]?.id,
         sourceWarehouseId: sourceWhId,
         destinationProjectId: destProjId,
-        destinationSiteId: 'site-02',
+        destinationSiteId: 'd0000000-0000-0000-0000-000000000001',
         driverName,
         driverPhone,
         vehicleNumber,
-        createdBy: user?.id || 'usr-wh-05',
+        createdBy: user?.id || 'a0000000-0000-0000-0000-000000000005',
       });
 
       // Attach local relations for preview

@@ -37,35 +37,34 @@ const NAV_ITEMS: NavItem[] = [
     title: 'Absensi (Field & GPS)',
     href: '/dashboard/attendance',
     icon: CalendarCheck2,
-    badge: 'Live',
     allowedRoles: ['super_admin', 'hr_admin', 'project_manager', 'finance', 'warehouse_logistics', 'field_technician'],
   },
   {
     title: 'Implementasi Proyek',
     href: '/dashboard/projects',
     icon: FolderGit2,
-    badge: '3 Aktif',
+    badge: '3',
     allowedRoles: ['super_admin', 'project_manager', 'field_technician', 'finance'],
   },
   {
     title: 'Finance & Reimbursement',
     href: '/dashboard/finance',
     icon: ReceiptText,
-    badge: '1 Pending',
+    badge: '1',
     allowedRoles: ['super_admin', 'finance', 'project_manager', 'field_technician'],
   },
   {
     title: 'Warehouse & Inventory',
     href: '/dashboard/warehouse',
     icon: Boxes,
-    badge: '2 Alert',
+    badge: '2',
     allowedRoles: ['super_admin', 'warehouse_logistics', 'project_manager'],
   },
   {
     title: 'Logistik & Surat Jalan',
     href: '/dashboard/logistics',
     icon: Truck,
-    badge: '1 Transit',
+    badge: '1',
     allowedRoles: ['super_admin', 'warehouse_logistics', 'project_manager', 'field_technician'],
   },
 ];
@@ -137,10 +136,10 @@ export function Sidebar() {
               {item.badge && (
                 <span
                   className={cn(
-                    'text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ml-1.5',
+                    'min-w-[20px] h-5 px-1.5 flex items-center justify-center rounded-full text-[10px] font-semibold shrink-0 ml-1.5 transition-colors',
                     isActive
-                      ? 'bg-zinc-800 text-zinc-300 border border-zinc-700/60'
-                      : 'bg-zinc-900 text-zinc-500 border border-zinc-800'
+                      ? 'bg-zinc-800 text-zinc-200 border border-zinc-700/80 shadow-sm'
+                      : 'bg-zinc-900 text-zinc-400 border border-zinc-800'
                   )}
                 >
                   {item.badge}

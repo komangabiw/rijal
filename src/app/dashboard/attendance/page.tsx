@@ -64,7 +64,19 @@ export default function AttendancePage() {
   const loadData = async () => {
     setLoading(true);
     const data = await fetchAttendances();
-    setAttendances(data);
+    let localList: Attendance[] = [];
+    if (typeof window !== 'undefined') {
+      try {
+        const savedLocal = localStorage.getItem('pt_telecom_local_attendances');
+        if (savedLocal) localList = JSON.parse(savedLocal);
+      } catch {}
+    }
+    // Merge remote data with local attendances without duplicate IDs
+    const combined = [
+      ...localList,
+      ...data.filter((d) => !localList.some((l) => l.id === d.id || (l.user_id === d.user_id && l.date === d.date))),
+    ];
+    setAttendances(combined);
     setLoading(false);
   };
 
@@ -110,7 +122,18 @@ export default function AttendancePage() {
         photoBlob: selfieBlob,
       });
 
-      setAttendances([newRecord, ...attendances.filter((a) => a.id !== newRecord.id)]);
+      // Attach profile if not present
+      if (!newRecord.profile && user) {
+        newRecord.profile = user;
+      }
+
+      const updatedList = [newRecord, ...attendances.filter((a) => a.id !== newRecord.id && !(a.user_id === newRecord.user_id && a.date === newRecord.date))];
+      setAttendances(updatedList);
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('pt_telecom_local_attendances', JSON.stringify(updatedList.slice(0, 50)));
+        } catch {}
+      }
       setNotes('');
       setSelfieBlob(null);
     } catch (err: any) {

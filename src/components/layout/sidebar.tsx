@@ -16,8 +16,14 @@ import {
   Radio,
   X,
   LogOut,
-  User,
+  PanelLeftClose,
+  Shield,
+  Briefcase,
+  Users,
+  Coins,
+  HardHat,
 } from 'lucide-react';
+import { DEMO_PROFILES } from '@/lib/mock-data';
 
 interface NavItem {
   title: string;
@@ -29,23 +35,23 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   {
-    title: 'Executive Overview',
+    title: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
     allowedRoles: ['super_admin', 'hr_admin', 'project_manager', 'finance', 'warehouse_logistics', 'field_technician'],
   },
   {
-    title: 'Absensi (Field & Office)',
+    title: 'Absensi (Field & GPS)',
     href: '/dashboard/attendance',
     icon: CalendarCheck2,
-    badge: 'GPS Active',
+    badge: 'Live',
     allowedRoles: ['super_admin', 'hr_admin', 'project_manager', 'finance', 'warehouse_logistics', 'field_technician'],
   },
   {
     title: 'Implementasi Proyek',
     href: '/dashboard/projects',
     icon: FolderGit2,
-    badge: '3 Active',
+    badge: '3 Aktif',
     allowedRoles: ['super_admin', 'project_manager', 'field_technician', 'finance'],
   },
   {
@@ -59,7 +65,7 @@ const NAV_ITEMS: NavItem[] = [
     title: 'Warehouse & Inventory',
     href: '/dashboard/warehouse',
     icon: Boxes,
-    badge: '2 Low',
+    badge: '2 Alert',
     allowedRoles: ['super_admin', 'warehouse_logistics', 'project_manager'],
   },
   {
@@ -73,56 +79,52 @@ const NAV_ITEMS: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { role, user, mobileMenuOpen, setMobileMenuOpen, logout } = useAuth();
+  const { role, user, mobileMenuOpen, setMobileMenuOpen, sidebarCollapsed, toggleSidebar, logout } = useAuth();
 
   const filteredNav = NAV_ITEMS.filter((item) => item.allowedRoles.includes(role));
 
   const content = (
-    <div className="flex h-full flex-col bg-slate-900 text-white">
-      {/* Brand logo & status */}
-      <div className="h-16 flex items-center justify-between px-5 border-b border-slate-800">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/30 shrink-0">
-            <Radio className="w-5 h-5 animate-pulse" />
+    <div className="flex h-full flex-col bg-zinc-950 text-zinc-100 select-none">
+      {/* Brand logo & header */}
+      <div className="h-16 flex items-center justify-between px-5 border-b border-zinc-800/80">
+        <Link href="/dashboard" className="flex items-center gap-3 group">
+          <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-700/80 flex items-center justify-center text-white shadow-sm group-hover:border-zinc-500 transition-colors shrink-0">
+            <Radio className="w-4 h-4 text-blue-400 animate-pulse" />
           </div>
           <div className="min-w-0">
-            <div className="text-sm font-bold tracking-tight text-white flex items-center gap-1.5">
-              PT TELEKOM
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <div className="text-sm font-semibold tracking-tight text-white flex items-center gap-1.5">
+              PT Telekomunikasi
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
             </div>
-            <div className="text-[10px] text-slate-400 truncate">
-              Operations & ERP Portal
+            <div className="text-[10px] text-zinc-400 font-normal truncate">
+              Operations & ERP
             </div>
           </div>
-        </div>
+        </Link>
 
         {/* Mobile close button */}
         <button
           onClick={() => setMobileMenuOpen(false)}
-          className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+          className="lg:hidden p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
           aria-label="Tutup menu"
         >
           <X className="w-5 h-5" />
         </button>
-      </div>
 
-      {/* Role banner */}
-      <div className="px-4 py-2.5 mx-4 my-3 rounded-lg bg-slate-800/80 border border-slate-700/60 flex items-center gap-2.5">
-        <div className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-ping shrink-0" />
-        <div className="min-w-0 flex-1">
-          <div className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">
-            Active Persona
-          </div>
-          <div className="text-xs font-semibold text-blue-400 capitalize truncate">
-            {role.replace('_', ' ')}
-          </div>
-        </div>
+        {/* Desktop collapse toggle shortcut */}
+        <button
+          onClick={toggleSidebar}
+          className="hidden lg:flex p-1 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900 transition-colors"
+          title="Tutup sidebar"
+        >
+          <PanelLeftClose className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Navigation menu */}
-      <div className="flex-1 overflow-y-auto px-4 py-2 space-y-1">
-        <div className="px-2 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-          Core Modules
+      <div className="flex-1 overflow-y-auto px-3.5 py-4 space-y-1 scrollbar-thin scrollbar-thumb-zinc-800">
+        <div className="px-2.5 pb-2 text-[11px] font-medium text-zinc-500 tracking-wide">
+          Menu
         </div>
         {filteredNav.map((item) => {
           const isActive = pathname === item.href;
@@ -133,17 +135,17 @@ export function Sidebar() {
               href={item.href}
               onClick={() => setMobileMenuOpen(false)}
               className={cn(
-                'flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-all group',
+                'flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all duration-150',
                 isActive
-                  ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/20'
-                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                  ? 'bg-zinc-900 text-white shadow-sm border border-zinc-800'
+                  : 'text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200'
               )}
             >
               <div className="flex items-center gap-3 min-w-0">
                 <Icon
                   className={cn(
                     'w-4 h-4 shrink-0 transition-colors',
-                    isActive ? 'text-white' : 'text-slate-400 group-hover:text-blue-400'
+                    isActive ? 'text-white' : 'text-zinc-400'
                   )}
                 />
                 <span className="truncate">{item.title}</span>
@@ -151,10 +153,10 @@ export function Sidebar() {
               {item.badge && (
                 <span
                   className={cn(
-                    'text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ml-1.5',
+                    'text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ml-1.5',
                     isActive
-                      ? 'bg-white/20 text-white'
-                      : 'bg-slate-800 text-slate-400 border border-slate-700'
+                      ? 'bg-zinc-800 text-zinc-300 border border-zinc-700/60'
+                      : 'bg-zinc-900 text-zinc-500 border border-zinc-800'
                   )}
                 >
                   {item.badge}
@@ -163,26 +165,58 @@ export function Sidebar() {
             </Link>
           );
         })}
+
+        {/* Your team section matching 21st.dev ShadcnStore layout */}
+        <div className="pt-6 pb-2">
+          <div className="px-2.5 pb-2 text-[11px] font-medium text-zinc-500 tracking-wide flex items-center justify-between">
+            <span>Your team</span>
+            <span className="text-[10px] bg-zinc-900 px-1.5 py-0.2 rounded border border-zinc-800 text-zinc-400">
+              {DEMO_PROFILES.length}
+            </span>
+          </div>
+          <div className="space-y-1">
+            {DEMO_PROFILES.map((member) => (
+              <div
+                key={member.id}
+                className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-zinc-900/40 text-xs text-zinc-300 transition-colors group"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <img
+                    src={member.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
+                    alt={member.full_name}
+                    className="w-6 h-6 rounded-full object-cover border border-zinc-800 shrink-0"
+                  />
+                  <span className="truncate text-[11px] text-zinc-300 group-hover:text-white">
+                    {member.full_name}
+                  </span>
+                </div>
+                <span className="text-[10px] text-zinc-500 truncate max-w-[80px] text-right font-normal">
+                  {(member.division || 'Operations').split(' ')[0]}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* User footer info */}
-      <div className="p-4 border-t border-slate-800 bg-slate-900/60">
-        <div className="flex items-center justify-between gap-3">
+      {/* User footer info matching 21st.dev style */}
+      <div className="p-3 border-t border-zinc-800/80 bg-zinc-950">
+        <div className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-xl hover:bg-zinc-900/70 transition-colors">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <img
               src={user?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
               alt="Avatar"
-              className="w-8 h-8 rounded-full object-cover border border-slate-700 shrink-0"
+              className="w-8 h-8 rounded-full object-cover border border-zinc-700/80 shrink-0"
             />
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-white truncate">{user?.full_name}</p>
-              <p className="text-[10px] text-slate-400 truncate">{user?.division || 'Operasional'}</p>
+              <p className="text-xs font-medium text-white truncate">{user?.full_name || 'Bambang Sudibyo'}</p>
+              <p className="text-[11px] text-zinc-400 truncate">{user?.email || 'admin@telekomunikasi.co.id'}</p>
             </div>
           </div>
           <button
             onClick={logout}
-            className="lg:hidden p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-md transition-colors"
-            title="Logout"
+            className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-zinc-800 rounded-lg transition-colors"
+            title="Keluar"
           >
             <LogOut className="w-4 h-4" />
           </button>
@@ -193,9 +227,18 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Desktop Persistent Sidebar */}
-      <aside className="hidden lg:flex w-64 flex-col fixed inset-y-0 z-40 border-r border-slate-800">
-        {content}
+      {/* Desktop Persistent / Collapsible Sidebar */}
+      <aside
+        className={cn(
+          'hidden lg:flex flex-col fixed inset-y-0 z-40 bg-zinc-950 border-r border-zinc-800 transition-all duration-300 ease-in-out select-none',
+          sidebarCollapsed
+            ? 'w-0 -translate-x-full opacity-0 pointer-events-none overflow-hidden border-r-0'
+            : 'w-64 translate-x-0 opacity-100 overflow-visible'
+        )}
+      >
+        <div className="w-64 h-full flex flex-col">
+          {content}
+        </div>
       </aside>
 
       {/* Mobile Slide-Over Drawer with Animated Backdrop */}
@@ -203,7 +246,7 @@ export function Sidebar() {
         <div className="fixed inset-0 z-50 lg:hidden flex">
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
+            className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
             onClick={() => setMobileMenuOpen(false)}
           />
 

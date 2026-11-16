@@ -14,6 +14,9 @@ interface AuthContextType {
   mobileMenuOpen: boolean;
   setMobileMenuOpen: (open: boolean) => void;
   toggleMobileMenu: () => void;
+  sidebarCollapsed: boolean;
+  setSidebarCollapsed: (collapsed: boolean) => void;
+  toggleSidebar: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,12 +25,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<Profile>(DEMO_PROFILES[0]);
   const [isLoading, setIsLoading] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     const savedRole = localStorage.getItem('pt_telecom_role') as UserRole | null;
     if (savedRole) {
       const found = DEMO_PROFILES.find((p) => p.role === savedRole);
       if (found) setCurrentUser(found);
+    }
+    const savedSidebar = localStorage.getItem('pt_telecom_sidebar_collapsed');
+    if (savedSidebar === 'true') {
+      setSidebarCollapsed(true);
     }
   }, []);
 
@@ -46,6 +54,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const toggleMobileMenu = () => setMobileMenuOpen((prev) => !prev);
 
+  const toggleSidebar = () => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem('pt_telecom_sidebar_collapsed', String(next));
+      return next;
+    });
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -58,6 +74,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         mobileMenuOpen,
         setMobileMenuOpen,
         toggleMobileMenu,
+        sidebarCollapsed,
+        setSidebarCollapsed,
+        toggleSidebar,
       }}
     >
       {children}

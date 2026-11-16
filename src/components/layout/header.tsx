@@ -3,103 +3,123 @@
 import React from 'react';
 import { useAuth } from '@/context/auth-context';
 import { UserRole } from '@/types/database';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Bell,
+  Search,
+  PanelLeft,
+  PanelLeftClose,
   LogOut,
-  Sparkles,
-  MapPin,
   Shield,
   Briefcase,
   Users,
   Coins,
   Truck,
   HardHat,
-  Menu,
 } from 'lucide-react';
 
 const ROLE_OPTIONS: { role: UserRole; label: string; icon: React.ReactNode }[] = [
-  { role: 'super_admin', label: 'Super Admin', icon: <Shield className="w-3.5 h-3.5 text-purple-600" /> },
-  { role: 'hr_admin', label: 'HR Admin', icon: <Users className="w-3.5 h-3.5 text-emerald-600" /> },
-  { role: 'project_manager', label: 'Project Manager', icon: <Briefcase className="w-3.5 h-3.5 text-blue-600" /> },
-  { role: 'finance', label: 'Finance', icon: <Coins className="w-3.5 h-3.5 text-amber-600" /> },
-  { role: 'warehouse_logistics', label: 'Warehouse & Logistik', icon: <Truck className="w-3.5 h-3.5 text-cyan-600" /> },
-  { role: 'field_technician', label: 'Field Technician', icon: <HardHat className="w-3.5 h-3.5 text-orange-600" /> },
+  { role: 'super_admin', label: 'Super Admin', icon: <Shield className="w-3.5 h-3.5 text-purple-400" /> },
+  { role: 'hr_admin', label: 'HR Admin', icon: <Users className="w-3.5 h-3.5 text-emerald-400" /> },
+  { role: 'project_manager', label: 'Project Manager', icon: <Briefcase className="w-3.5 h-3.5 text-blue-400" /> },
+  { role: 'finance', label: 'Finance', icon: <Coins className="w-3.5 h-3.5 text-amber-400" /> },
+  { role: 'warehouse_logistics', label: 'Warehouse & Logistik', icon: <Truck className="w-3.5 h-3.5 text-cyan-400" /> },
+  { role: 'field_technician', label: 'Field Technician', icon: <HardHat className="w-3.5 h-3.5 text-orange-400" /> },
 ];
 
 export function Header() {
-  const { user, role, switchRole, logout, toggleMobileMenu } = useAuth();
+  const { user, role, switchRole, logout, sidebarCollapsed, toggleSidebar, toggleMobileMenu } = useAuth();
+
+  // Smart toggle handler: on desktop toggles sidebarCollapsed, on mobile opens slide-over drawer
+  const handleToggle = () => {
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+      toggleSidebar();
+    } else {
+      toggleMobileMenu();
+    }
+  };
+
+  const firstName = user?.full_name ? user.full_name.split(' ')[0] : 'Admin';
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-white/95 backdrop-blur-md border-b border-slate-200 px-3 sm:px-6 flex items-center justify-between gap-2">
-      {/* Left info & Mobile Menu Toggle */}
-      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+    <header className="sticky top-0 z-30 h-16 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/80 px-4 sm:px-6 flex items-center justify-between gap-4 transition-colors">
+      {/* Left section: Sidebar Toggle [ | ] + Welcome Back Greeting */}
+      <div className="flex items-center gap-3 min-w-0">
         <button
-          onClick={toggleMobileMenu}
-          className="lg:hidden p-2 -ml-1 text-slate-700 hover:text-slate-950 hover:bg-slate-100 rounded-lg transition-colors focus:outline-none"
-          aria-label="Buka menu navigasi"
+          onClick={handleToggle}
+          className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-colors focus:outline-none border border-transparent hover:border-zinc-700"
+          title={sidebarCollapsed ? 'Buka Sidebar' : 'Tutup Sidebar'}
+          aria-label="Toggle Sidebar"
         >
-          <Menu className="w-5 h-5" />
+          {sidebarCollapsed ? (
+            <PanelLeft className="w-5 h-5 text-zinc-300" />
+          ) : (
+            <PanelLeftClose className="w-5 h-5 text-zinc-300" />
+          )}
         </button>
 
-        <div className="flex flex-col min-w-0">
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <span className="text-xs sm:text-sm font-bold text-slate-900 truncate">
-              PT Telekomunikasi
-            </span>
-            <Badge variant="outline" className="text-[9px] sm:text-[10px] bg-slate-50 border-slate-300 px-1.5 py-0 shrink-0">
-              ERP
-            </Badge>
-          </div>
-          <span className="text-[10px] sm:text-[11px] text-slate-500 hidden md:flex items-center gap-1 truncate">
-            <MapPin className="w-3 h-3 text-red-500 shrink-0 inline" />
-            Central Jakarta Ops • Geofencing Active
-          </span>
+        <div className="flex items-center gap-2">
+          <h1 className="text-base sm:text-lg font-semibold tracking-tight text-white truncate">
+            Welcome back, {firstName}
+          </h1>
         </div>
       </div>
 
-      {/* Right controls: Role Quick Switcher + Notifications + Logout */}
-      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+      {/* Right section: Search + Notifications + Role Switcher + Avatar */}
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Search button */}
+        <button
+          className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 border border-transparent hover:border-zinc-800 transition-colors"
+          title="Search"
+          aria-label="Search"
+        >
+          <Search className="w-4 h-4" />
+        </button>
+
+        {/* Notifications button with red badge */}
+        <div className="relative">
+          <button
+            className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 border border-transparent hover:border-zinc-800 transition-colors"
+            title="Notifications"
+            aria-label="Notifications"
+          >
+            <Bell className="w-4 h-4" />
+          </button>
+          <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 ring-2 ring-zinc-950"></span>
+        </div>
+
         {/* Dynamic Role Switcher Dropdown */}
-        <div className="flex items-center gap-1 bg-slate-100 p-0.5 sm:p-1 rounded-lg border border-slate-200">
-          <span className="text-[11px] font-semibold text-slate-500 pl-1.5 hidden xl:inline flex items-center gap-1">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500 inline" />
-            Role:
-          </span>
+        <div className="flex items-center gap-1 bg-zinc-900 px-2 py-1 rounded-lg border border-zinc-800">
           <select
             value={role}
             onChange={(e) => switchRole(e.target.value as UserRole)}
-            className="text-[11px] sm:text-xs font-semibold bg-white border border-slate-300 rounded-md py-1 px-1.5 sm:px-2.5 text-slate-800 shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-600 cursor-pointer max-w-[130px] sm:max-w-none truncate"
+            className="text-xs font-medium bg-transparent border-none text-zinc-200 shadow-none focus:outline-none cursor-pointer max-w-[120px] sm:max-w-none truncate"
           >
             {ROLE_OPTIONS.map((opt) => (
-              <option key={opt.role} value={opt.role}>
+              <option key={opt.role} value={opt.role} className="bg-zinc-900 text-zinc-200">
                 {opt.label}
               </option>
             ))}
           </select>
         </div>
 
-        {/* Notifications badge */}
-        <div className="relative">
-          <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 text-slate-600 hover:text-slate-900">
-            <Bell className="w-4 h-4" />
-          </Button>
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+        {/* User Avatar with profile picture */}
+        <div className="flex items-center gap-2 pl-1">
+          <img
+            src={user?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120'}
+            alt={user?.full_name || 'User Avatar'}
+            className="w-8 h-8 rounded-full object-cover border border-zinc-700/80 shrink-0"
+          />
         </div>
 
-        {/* Desktop Logout Button */}
-        <div className="h-6 w-px bg-slate-200 hidden sm:block" />
-
-        <Button
-          variant="outline"
-          size="sm"
+        {/* Logout Button (Desktop) */}
+        <button
           onClick={logout}
-          className="text-xs text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hidden sm:inline-flex h-8 px-2.5"
+          className="hidden sm:flex p-2 text-zinc-500 hover:text-red-400 hover:bg-zinc-900 rounded-lg transition-colors border border-transparent hover:border-zinc-800"
+          title="Keluar Akun"
         >
-          <LogOut className="w-3.5 h-3.5 mr-1" />
-          Logout
-        </Button>
+          <LogOut className="w-4 h-4" />
+        </button>
       </div>
     </header>
   );

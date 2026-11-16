@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "build:worker": "opennextjs-cloudflare",
-    "deploy": "opennextjs-cloudflare && wrangler deploy",
+    "build:worker": "opennextjs-cloudflare build",
+    "deploy": "opennextjs-cloudflare build && wrangler deploy",
     "pages:build": "npx @cloudflare/next-on-pages",
     "pages:preview": "npx wrangler pages dev .vercel/output/static",
     "pages:deploy": "npx wrangler pages deploy .vercel/output/static"

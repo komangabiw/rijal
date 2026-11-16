@@ -1,30 +1,24 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { formatRupiah, formatDate } from '@/lib/utils';
-import {
-  DEMO_PROJECTS,
-  DEMO_SITES,
-  DEMO_PROGRESS_LOGS,
-} from '@/lib/mock-data';
 import { Project, ProjectProgressLog } from '@/types/database';
+import { DEMO_PROJECTS, DEMO_SITES } from '@/lib/mock-data';
+import { fetchProjects, fetchProgressLogs, submitProgressLog } from '@/lib/api-service';
 import {
   FolderGit2,
   Plus,
   AlertTriangle,
-  CheckCircle2,
-  Radio,
   Camera,
-  Layers,
   MapPin,
-  TrendingUp,
   X,
-  Sparkles,
+  Upload,
+  RotateCw,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -38,11 +32,12 @@ import {
 } from 'recharts';
 
 export default function ProjectsPage() {
-  const { user, role } = useAuth();
+  const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>(DEMO_PROJECTS);
-  const [logs, setLogs] = useState<ProjectProgressLog[]>(DEMO_PROGRESS_LOGS);
+  const [logs, setLogs] = useState<ProjectProgressLog[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project>(DEMO_PROJECTS[0]);
   const [showLogModal, setShowLogModal] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Form states for adding a progress log
   const [logVolume, setLogVolume] = useState('250');
@@ -51,30 +46,76 @@ export default function ProjectsPage() {
   const [issueDesc, setIssueDesc] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleAddLog = (e: React.FormEvent) => {
+  // Real files for 3-stage photo evidence
+  const [fileBefore, setFileBefore] = useState<File | null>(null);
+  const [fileProgress, setFileProgress] = useState<File | null>(null);
+  const [fileAfter, setFileAfter] = useState<File | null>(null);
+
+  const [previewBefore, setPreviewBefore] = useState<string | null>(null);
+  const [previewProgress, setPreviewProgress] = useState<string | null>(null);
+  const [previewAfter, setPreviewAfter] = useState<string | null>(null);
+
+  const inputBeforeRef = useRef<HTMLInputElement | null>(null);
+  const inputProgressRef = useRef<HTMLInputElement | null>(null);
+  const inputAfterRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    const [fetchedProjects, fetchedLogs] = await Promise.all([
+      fetchProjects(),
+      fetchProgressLogs(),
+    ]);
+    setProjects(fetchedProjects);
+    if (fetchedProjects.length > 0) {
+      setSelectedProject(fetchedProjects[0]);
+    }
+    setLogs(fetchedLogs);
+    setLoading(false);
+  };
+
+  const handleFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: 'before' | 'progress' | 'after'
+  ) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      if (type === 'before') {
+        setFileBefore(file);
+        setPreviewBefore(url);
+      } else if (type === 'progress') {
+        setFileProgress(file);
+        setPreviewProgress(url);
+      } else if (type === 'after') {
+        setFileAfter(file);
+        setPreviewAfter(url);
+      }
+    }
+  };
+
+  const handleAddLog = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     const volumeNum = Number(logVolume) || 0;
-    const newLog: ProjectProgressLog = {
-      id: `log-${Date.now()}`,
-      project_id: selectedProject.id,
-      site_id: DEMO_SITES[0].id,
-      technician_id: user?.id || 'usr-tech-06',
-      log_date: '2026-11-16',
-      volume_realized: volumeNum,
-      description: logDesc || 'Penarikan kabel lanjutan dan perapihan span FO.',
-      photo_before_url: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400',
-      photo_progress_url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=400',
-      photo_after_url: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=400',
-      has_issues: hasIssue,
-      issue_description: hasIssue ? issueDesc : null,
-      created_at: new Date().toISOString(),
-      technician: user || undefined,
-      site: DEMO_SITES[0],
-    };
 
-    // Update Project actual_volume and percentage
+    const newLog = await submitProgressLog({
+      projectId: selectedProject.id,
+      siteId: DEMO_SITES[0].id,
+      technicianId: user?.id || 'usr-tech-06',
+      volumeRealized: volumeNum,
+      description: logDesc || 'Penarikan kabel lanjutan dan perapihan span FO.',
+      photoBefore: fileBefore || undefined,
+      photoProgress: fileProgress || undefined,
+      photoAfter: fileAfter || undefined,
+      hasIssues: hasIssue,
+      issueDescription: hasIssue ? issueDesc : undefined,
+    });
+
     const updatedActual = Number(selectedProject.actual_volume) + volumeNum;
     const newPct = Math.min(100, Math.round((updatedActual / Number(selectedProject.target_volume)) * 10000) / 100);
 
@@ -84,20 +125,24 @@ export default function ProjectsPage() {
         : p
     );
 
-    setTimeout(() => {
-      setProjects(updatedProjects);
-      setSelectedProject({
-        ...selectedProject,
-        actual_volume: updatedActual,
-        progress_percentage: newPct,
-      });
-      setLogs([newLog, ...logs]);
-      setIsSubmitting(false);
-      setShowLogModal(false);
-      setLogDesc('');
-      setHasIssue(false);
-      setIssueDesc('');
-    }, 400);
+    setProjects(updatedProjects);
+    setSelectedProject({
+      ...selectedProject,
+      actual_volume: updatedActual,
+      progress_percentage: newPct,
+    });
+    setLogs([newLog, ...logs]);
+    setIsSubmitting(false);
+    setShowLogModal(false);
+    setLogDesc('');
+    setHasIssue(false);
+    setIssueDesc('');
+    setFileBefore(null);
+    setFileProgress(null);
+    setFileAfter(null);
+    setPreviewBefore(null);
+    setPreviewProgress(null);
+    setPreviewAfter(null);
   };
 
   const chartData = projects.map((p) => ({
@@ -116,17 +161,28 @@ export default function ProjectsPage() {
             Implementasi Proyek & Site Lapangan
           </h1>
           <p className="text-xs text-slate-500">
-            Monitoring progres fisik penarikan kabel fiber optik, instalasi tower BTS, target vs aktual, serta log foto harian.
+            Monitoring progres fisik penarikan kabel fiber optik, target vs aktual, serta upload bukti foto 3 tahap ke Supabase Storage.
           </p>
         </div>
 
-        <Button
-          onClick={() => setShowLogModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold self-start sm:self-auto shadow"
-        >
-          <Plus className="w-4 h-4 mr-1.5" />
-          Input Log Progres & Bukti Foto
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={loadData}
+            variant="outline"
+            size="sm"
+            className="text-xs border-slate-300"
+          >
+            <RotateCw className="w-3.5 h-3.5 mr-1" />
+            Refresh
+          </Button>
+          <Button
+            onClick={() => setShowLogModal(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow"
+          >
+            <Plus className="w-4 h-4 mr-1.5" />
+            Input Log Progres & Bukti Foto
+          </Button>
+        </div>
       </div>
 
       {/* Target vs Actual Comparison Chart */}
@@ -270,7 +326,7 @@ export default function ProjectsPage() {
                     Log Progres Harian & Bukti Foto Lapangan
                   </CardTitle>
                   <CardDescription className="text-xs text-slate-500">
-                    Dokumentasi Before, Progress, dan After dari teknisi lapangan
+                    Dokumentasi Before, Progress, dan After tersimpan di Supabase Storage
                   </CardDescription>
                 </div>
                 <Badge variant="secondary" className="text-xs">
@@ -349,7 +405,7 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {/* Input Progress Log Modal */}
+      {/* Input Progress Log Modal with REAL 3-Stage Photo Upload */}
       {showLogModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
           <Card className="w-full max-w-lg bg-white shadow-2xl rounded-2xl border-slate-300 overflow-hidden max-h-[92vh] flex flex-col">
@@ -357,7 +413,7 @@ export default function ProjectsPage() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
                   <Camera className="w-4 h-4 text-blue-600" />
-                  Input Progres Harian Proyek
+                  Input Progres Harian & Upload Foto
                 </CardTitle>
                 <button
                   onClick={() => setShowLogModal(false)}
@@ -399,22 +455,81 @@ export default function ProjectsPage() {
                   />
                 </div>
 
-                <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-2">
-                  <span className="text-xs font-semibold text-slate-700 block">
-                    Upload Bukti Foto 3 Tahap (Supabase Storage)
+                {/* Real 3-Stage Photo Upload Section */}
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                  <span className="text-xs font-semibold text-slate-800 block">
+                    Upload Foto Lapangan (Supabase Storage: project-progress)
                   </span>
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    <div className="border border-dashed border-slate-300 rounded-lg p-2 bg-white">
-                      <Camera className="w-4 h-4 mx-auto text-slate-400" />
-                      <span className="text-[10px] text-slate-500 font-medium mt-1 block">Foto Before</span>
+
+                  <input
+                    type="file"
+                    ref={inputBeforeRef}
+                    accept="image/*"
+                    onChange={(e) => handleFileChange(e, 'before')}
+                    className="hidden"
+                  />
+                  <input
+                    type="file"
+                    ref={inputProgressRef}
+                    accept="image/*"
+                    onChange={(e) => handleFileChange(e, 'progress')}
+                    className="hidden"
+                  />
+                  <input
+                    type="file"
+                    ref={inputAfterRef}
+                    accept="image/*"
+                    onChange={(e) => handleFileChange(e, 'after')}
+                    className="hidden"
+                  />
+
+                  <div className="grid grid-cols-3 gap-2">
+                    {/* Before Photo */}
+                    <div
+                      onClick={() => inputBeforeRef.current?.click()}
+                      className="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-lg p-2 bg-white text-center cursor-pointer transition-colors relative min-h-[90px] flex flex-col items-center justify-center"
+                    >
+                      {previewBefore ? (
+                        <img src={previewBefore} alt="Before" className="w-full h-16 object-cover rounded" />
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4 text-slate-400 mb-1" />
+                          <span className="text-[10px] font-semibold text-slate-600 block">1. Before</span>
+                          <span className="text-[9px] text-slate-400">Pilih Foto</span>
+                        </>
+                      )}
                     </div>
-                    <div className="border border-dashed border-slate-300 rounded-lg p-2 bg-white">
-                      <Camera className="w-4 h-4 mx-auto text-blue-500" />
-                      <span className="text-[10px] text-blue-600 font-medium mt-1 block">Foto Progress</span>
+
+                    {/* Progress Photo */}
+                    <div
+                      onClick={() => inputProgressRef.current?.click()}
+                      className="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-lg p-2 bg-white text-center cursor-pointer transition-colors relative min-h-[90px] flex flex-col items-center justify-center"
+                    >
+                      {previewProgress ? (
+                        <img src={previewProgress} alt="Progress" className="w-full h-16 object-cover rounded" />
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4 text-blue-500 mb-1" />
+                          <span className="text-[10px] font-semibold text-blue-600 block">2. Progress</span>
+                          <span className="text-[9px] text-slate-400">Pilih Foto</span>
+                        </>
+                      )}
                     </div>
-                    <div className="border border-dashed border-slate-300 rounded-lg p-2 bg-white">
-                      <Camera className="w-4 h-4 mx-auto text-emerald-500" />
-                      <span className="text-[10px] text-emerald-600 font-medium mt-1 block">Foto After</span>
+
+                    {/* After Photo */}
+                    <div
+                      onClick={() => inputAfterRef.current?.click()}
+                      className="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-lg p-2 bg-white text-center cursor-pointer transition-colors relative min-h-[90px] flex flex-col items-center justify-center"
+                    >
+                      {previewAfter ? (
+                        <img src={previewAfter} alt="After" className="w-full h-16 object-cover rounded" />
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4 text-emerald-500 mb-1" />
+                          <span className="text-[10px] font-semibold text-emerald-600 block">3. After</span>
+                          <span className="text-[9px] text-slate-400">Pilih Foto</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -455,7 +570,7 @@ export default function ProjectsPage() {
                     size="sm"
                     className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
                   >
-                    {isSubmitting ? 'Menyimpan Log...' : 'Simpan & Update Progres Proyek'}
+                    {isSubmitting ? 'Mengunggah Foto & Menyimpan...' : 'Simpan & Update Progres'}
                   </Button>
                 </div>
               </form>

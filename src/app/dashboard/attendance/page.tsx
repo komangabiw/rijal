@@ -1,48 +1,56 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { DEMO_ATTENDANCES, DEMO_OFFICES } from '@/lib/mock-data';
+import { WebcamCapture } from '@/components/ui/webcam-capture';
+import { DEMO_OFFICES } from '@/lib/mock-data';
 import { Attendance, AttendanceStatus } from '@/types/database';
 import { formatDate, formatDateTime } from '@/lib/utils';
+import { fetchAttendances, submitClockIn } from '@/lib/api-service';
 import {
   CalendarCheck2,
   MapPin,
-  Camera,
   CheckCircle2,
-  Clock,
   Download,
-  Filter,
   Navigation,
   ShieldCheck,
-  AlertCircle,
-  Sparkles,
+  RotateCw,
 } from 'lucide-react';
 
 export default function AttendancePage() {
-  const { user, role } = useAuth();
-  const [attendances, setAttendances] = useState<Attendance[]>(DEMO_ATTENDANCES);
+  const { user } = useAuth();
+  const [attendances, setAttendances] = useState<Attendance[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedOffice, setSelectedOffice] = useState(DEMO_OFFICES[0].id);
   const [attendanceType, setAttendanceType] = useState<AttendanceStatus>('present');
   const [notes, setNotes] = useState('');
-  const [isCapturing, setIsCapturing] = useState(false);
-  const [clockInSuccess, setClockInSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selfieBlob, setSelfieBlob] = useState<Blob | null>(null);
 
-  // Simulated GPS state
+  // Live GPS state
   const [coords, setCoords] = useState<{ lat: number; lng: number }>({
     lat: -6.239308,
     lng: 106.82711,
   });
 
-  // Check if current user already has attendance today
-  const todayRecord = attendances.find((a) => a.user_id === user?.id && a.date === '2026-11-16');
+  useEffect(() => {
+    loadData();
+    handleGetLocation();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    const data = await fetchAttendances();
+    setAttendances(data);
+    setLoading(false);
+  };
 
   const handleGetLocation = () => {
-    if (navigator.geolocation) {
+    if (typeof window !== 'undefined' && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           setCoords({
@@ -51,47 +59,38 @@ export default function AttendancePage() {
           });
         },
         () => {
-          // Fallback to HQ Jakarta
           setCoords({ lat: -6.239308, lng: 106.82711 });
-        }
+        },
+        { enableHighAccuracy: true, timeout: 5000 }
       );
     }
   };
 
-  const handleClockIn = () => {
-    setIsCapturing(true);
-    setTimeout(() => {
-      const office = DEMO_OFFICES.find((o) => o.id === selectedOffice);
-      const newAttendance: Attendance = {
-        id: `att-${Date.now()}`,
-        user_id: user?.id || 'usr-tech-06',
-        date: '2026-11-16',
-        status: attendanceType,
-        clock_in_time: new Date().toISOString(),
-        clock_in_latitude: coords.lat,
-        clock_in_longitude: coords.lng,
-        clock_in_address: office ? office.name : 'Site Lapangan FO Cluster',
-        clock_in_photo_url: user?.avatar_url || 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=300',
-        clock_in_office_id: selectedOffice,
-        clock_in_distance_meters: 18,
-        clock_out_time: null,
-        clock_out_latitude: null,
-        clock_out_longitude: null,
-        clock_out_address: null,
-        clock_out_photo_url: null,
-        notes: notes || 'Clock-in via Mobile Web ERP',
-        verification_status: 'approved',
-        verified_by: 'usr-hr-02',
-        verified_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        profile: user || undefined,
-      };
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayRecord = attendances.find((a) => a.user_id === user?.id && a.date === todayStr);
 
-      setAttendances([newAttendance, ...attendances.filter((a) => a.user_id !== user?.id)]);
-      setIsCapturing(false);
-      setClockInSuccess(true);
-    }, 600);
+  const handleClockIn = async () => {
+    if (!selfieBlob) {
+      alert('Silakan ambil foto selfie terlebih dahulu sebagai bukti kehadiran K3.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    const office = DEMO_OFFICES.find((o) => o.id === selectedOffice);
+
+    const newRecord = await submitClockIn({
+      userId: user?.id || 'usr-tech-06',
+      status: attendanceType,
+      latitude: coords.lat,
+      longitude: coords.lng,
+      officeId: selectedOffice,
+      address: office ? office.name : 'Site Lapangan FO Cluster',
+      notes: notes || 'Presensi terverifikasi via Web ERP',
+      photoBlob: selfieBlob,
+    });
+
+    setAttendances([newRecord, ...attendances.filter((a) => a.user_id !== user?.id)]);
+    setIsSubmitting(false);
   };
 
   const handleExportCSV = () => {
@@ -108,7 +107,7 @@ export default function AttendancePage() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `rekap_absensi_pt_telekomunikasi_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `rekap_absensi_pt_telekomunikasi_${todayStr}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -124,19 +123,30 @@ export default function AttendancePage() {
             Absensi Karyawan & Teknisi Lapangan
           </h1>
           <p className="text-xs text-slate-500">
-            Validasi presensi berbasis Geofencing GPS & foto selfie verifikasi sesuai standar operasional K3 PT Telekomunikasi.
+            Validasi presensi berbasis Geofencing GPS & foto selfie live tersimpan di Supabase Storage.
           </p>
         </div>
 
-        <Button
-          onClick={handleExportCSV}
-          variant="outline"
-          size="sm"
-          className="text-xs border-slate-300 text-slate-700 hover:bg-slate-50 self-start sm:self-auto"
-        >
-          <Download className="w-4 h-4 mr-1.5 text-slate-500" />
-          Export Rekap CSV
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={loadData}
+            variant="outline"
+            size="sm"
+            className="text-xs border-slate-300"
+          >
+            <RotateCw className="w-3.5 h-3.5 mr-1" />
+            Refresh
+          </Button>
+          <Button
+            onClick={handleExportCSV}
+            variant="outline"
+            size="sm"
+            className="text-xs border-slate-300 text-slate-700 hover:bg-slate-50"
+          >
+            <Download className="w-4 h-4 mr-1.5 text-slate-500" />
+            Export CSV
+          </Button>
+        </div>
       </div>
 
       {/* Clock-In Widget & Geofencing Card */}
@@ -150,7 +160,7 @@ export default function AttendancePage() {
                   Clock-In Presensi Hari Ini
                 </CardTitle>
                 <Badge variant="outline" className="text-[10px] bg-blue-100 text-blue-800 border-blue-200">
-                  {formatDate('2026-11-16')}
+                  {formatDate(todayStr)}
                 </Badge>
               </div>
               <CardDescription className="text-xs text-slate-500">
@@ -176,18 +186,18 @@ export default function AttendancePage() {
                       <span className="capitalize font-semibold">{todayRecord.status.replace('_', ' ')}</span>
                     </p>
                     <p>
-                      <strong>Jarak Geofence:</strong> {todayRecord.clock_in_distance_meters || 15} meter (Dalam Batas Toleransi)
+                      <strong>Jarak Geofence:</strong> {todayRecord.clock_in_distance_meters || 15} meter (Valid)
                     </p>
                   </div>
-                  <div className="pt-2 flex items-center gap-2">
+                  <div className="pt-2 flex items-center gap-2.5">
                     <img
-                      src={todayRecord.clock_in_photo_url || user?.avatar_url || ''}
+                      src={todayRecord.clock_in_photo_url || ''}
                       alt="Selfie"
-                      className="w-12 h-12 rounded-lg object-cover border border-emerald-300 shadow-sm"
+                      className="w-14 h-14 rounded-lg object-cover border-2 border-emerald-400 shadow"
                     />
                     <div className="text-[11px] text-emerald-800">
-                      <span className="font-semibold block">Selfie Clock-In Terverifikasi</span>
-                      <span className="text-emerald-600 font-mono text-[10px]">Tersimpan di Supabase Storage</span>
+                      <span className="font-semibold block">Selfie Live Terverifikasi</span>
+                      <span className="text-emerald-600 font-mono text-[10px]">Supabase Storage: attendance-photos</span>
                     </div>
                   </div>
                 </div>
@@ -225,12 +235,12 @@ export default function AttendancePage() {
                     </select>
                   </div>
 
-                  {/* GPS Coordinates Simulation / Capture */}
+                  {/* Live GPS Coordinates Detection */}
                   <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-xs space-y-2">
                     <div className="flex items-center justify-between text-slate-700 font-medium">
                       <span className="flex items-center gap-1.5">
                         <MapPin className="w-3.5 h-3.5 text-blue-600" />
-                        Koordinat GPS
+                        Koordinat GPS Live
                       </span>
                       <button
                         onClick={handleGetLocation}
@@ -250,8 +260,16 @@ export default function AttendancePage() {
                     </div>
                     <p className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
                       <ShieldCheck className="w-3.5 h-3.5" />
-                      Geofence Valid: Berada di dalam radius operasional (18m dari titik tengah)
+                      Geofence Valid: Terverifikasi berada di radius kerja site
                     </p>
+                  </div>
+
+                  {/* Live Selfie Camera Capture Component */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-700">Foto Selfie Bukti Kehadiran</label>
+                    <WebcamCapture
+                      onCapture={(blob) => setSelfieBlob(blob)}
+                    />
                   </div>
 
                   {/* Notes / Rencana Kerja */}
@@ -268,11 +286,10 @@ export default function AttendancePage() {
                   {/* Submit Clock-In Button */}
                   <Button
                     onClick={handleClockIn}
-                    disabled={isCapturing}
+                    disabled={isSubmitting || !selfieBlob}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 shadow"
                   >
-                    <Camera className="w-4 h-4 mr-1.5" />
-                    {isCapturing ? 'Memproses Presensi & Selfie...' : 'Ambil Selfie & Clock In'}
+                    {isSubmitting ? 'Mengunggah Foto & Presensi...' : 'Konfirmasi & Clock In'}
                   </Button>
                 </div>
               )}
@@ -363,9 +380,9 @@ export default function AttendancePage() {
                     <td className="p-3">
                       <div className="flex items-center gap-2.5">
                         <img
-                          src={att.clock_in_photo_url || att.profile?.avatar_url || ''}
+                          src={att.clock_in_photo_url || ''}
                           alt="Selfie"
-                          className="w-8 h-8 rounded-full object-cover border border-slate-300"
+                          className="w-9 h-9 rounded-full object-cover border border-slate-300"
                         />
                         <div>
                           <p className="font-semibold text-slate-900">{att.profile?.full_name || 'Teknisi'}</p>

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,12 +8,19 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatRupiah } from '@/lib/utils';
 import {
-  DEMO_PROJECTS,
-  DEMO_ATTENDANCES,
-  DEMO_STOCKS,
-  DEMO_EXPENSES,
-  DEMO_DELIVERY_ORDERS,
-} from '@/lib/mock-data';
+  fetchProjects,
+  fetchAttendances,
+  fetchStocks,
+  fetchExpenses,
+  fetchDeliveryOrders,
+} from '@/lib/api-service';
+import {
+  Project,
+  Attendance,
+  WarehouseStock,
+  ExpenseClaim,
+  DeliveryOrder,
+} from '@/types/database';
 import {
   CalendarCheck2,
   FolderGit2,
@@ -26,6 +33,7 @@ import {
   CheckCircle2,
   Clock,
   Sparkles,
+  RefreshCw,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -39,16 +47,41 @@ import {
 } from 'recharts';
 
 export default function DashboardOverviewPage() {
-  const { user, role } = useAuth();
+  const { user } = useAuth();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [attendances, setAttendances] = useState<Attendance[]>([]);
+  const [stocks, setStocks] = useState<WarehouseStock[]>([]);
+  const [expenses, setExpenses] = useState<ExpenseClaim[]>([]);
+  const [deliveries, setDeliveries] = useState<DeliveryOrder[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Calculate summaries
-  const lowStockCount = DEMO_STOCKS.filter((s) => (s.quantity <= (s.item?.min_stock_alert || 0))).length;
-  const transitDeliveries = DEMO_DELIVERY_ORDERS.filter((d) => d.status === 'in_transit').length;
-  const pendingClaims = DEMO_EXPENSES.filter((e) => e.status.startsWith('pending')).length;
-  const totalRAB = DEMO_PROJECTS.reduce((acc, p) => acc + Number(p.total_budget), 0);
+  useEffect(() => {
+    async function loadAllData() {
+      setIsLoading(true);
+      const [proj, att, stk, exp, del] = await Promise.all([
+        fetchProjects(),
+        fetchAttendances(),
+        fetchStocks(),
+        fetchExpenses(),
+        fetchDeliveryOrders(),
+      ]);
+      setProjects(proj);
+      setAttendances(att);
+      setStocks(stk);
+      setExpenses(exp);
+      setDeliveries(del);
+      setIsLoading(false);
+    }
+    loadAllData();
+  }, []);
 
-  // Chart data
-  const chartData = DEMO_PROJECTS.map((p) => ({
+  // Calculate summaries from live data
+  const lowStockCount = stocks.filter((s) => Number(s.quantity) <= Number(s.item?.min_stock_alert || 0)).length;
+  const transitDeliveries = deliveries.filter((d) => d.status === 'in_transit').length;
+  const pendingClaims = expenses.filter((e) => e.status.startsWith('pending')).length;
+
+  // Chart data from live projects
+  const chartData = projects.map((p) => ({
     name: p.project_code,
     target: Number(p.target_volume),
     actual: Number(p.actual_volume),
@@ -66,7 +99,7 @@ export default function DashboardOverviewPage() {
             <span>Operational Console • PT Telekomunikasi Indonesia</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Selamat Datang, {user?.full_name}
+            Selamat Datang, {user?.full_name || 'Tim Operasional'}
           </h1>
           <p className="text-blue-100 text-sm max-w-2xl">
             Sistem operasional terpadu memantau infrastruktur fiber optik, menara telekomunikasi, logistik material, dan klaim biaya operasional secara real-time.
@@ -103,11 +136,11 @@ export default function DashboardOverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-slate-900">
-              {DEMO_ATTENDANCES.length} / 6
+              {attendances.length} Terdata
             </div>
             <p className="text-xs text-emerald-600 font-medium flex items-center mt-1">
               <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-              100% Terverifikasi GPS Site
+              Validasi GPS & Selfie Kamera
             </p>
           </CardContent>
         </Card>
@@ -124,11 +157,11 @@ export default function DashboardOverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-slate-900">
-              {DEMO_PROJECTS.length} Proyek
+              {projects.length} Proyek Aktif
             </div>
             <p className="text-xs text-blue-600 font-medium flex items-center mt-1">
               <TrendingUp className="w-3.5 h-3.5 mr-1" />
-              Avg 73.2% Target Tercapai
+              FO Rollout & BTS Modernization
             </p>
           </CardContent>
         </Card>
@@ -166,9 +199,9 @@ export default function DashboardOverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-slate-900">
-              {transitDeliveries} Dalam Perjalanan
+              {transitDeliveries} In Transit
             </div>
-            <p className="text-xs text-red-600 font-medium flex items-center mt-1">
+            <p className={`text-xs font-medium flex items-center mt-1 ${lowStockCount > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
               <AlertTriangle className="w-3.5 h-3.5 mr-1" />
               {lowStockCount} Item di Bawah Batas Minimum
             </p>
@@ -199,28 +232,35 @@ export default function DashboardOverviewPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="h-72 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} />
-                    <YAxis tick={{ fontSize: 11, fill: '#64748b' }} />
-                    <Tooltip
-                      formatter={(val) => [Number(val).toLocaleString('id-ID'), 'Volume']}
-                      contentStyle={{
-                        backgroundColor: '#0f172a',
-                        borderRadius: '8px',
-                        border: 'none',
-                        color: '#fff',
-                        fontSize: '12px',
-                      }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-                    <Bar dataKey="target" name="Rencana Target" fill="#94a3b8" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="actual" name="Realisasi Fisik" fill="#2563eb" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              {isLoading ? (
+                <div className="h-72 w-full flex items-center justify-center text-xs text-slate-500">
+                  <RefreshCw className="w-4 h-4 animate-spin text-blue-600 mr-2" />
+                  Memuat grafik analytics...
+                </div>
+              ) : (
+                <div className="h-72 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} />
+                      <YAxis tick={{ fontSize: 11, fill: '#64748b' }} />
+                      <Tooltip
+                        formatter={(val) => [Number(val).toLocaleString('id-ID'), 'Volume']}
+                        contentStyle={{
+                          backgroundColor: '#0f172a',
+                          borderRadius: '8px',
+                          border: 'none',
+                          color: '#fff',
+                          fontSize: '12px',
+                        }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                      <Bar dataKey="target" name="Rencana Target" fill="#94a3b8" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="actual" name="Realisasi Fisik" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -237,7 +277,7 @@ export default function DashboardOverviewPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {DEMO_DELIVERY_ORDERS.map((d) => (
+              {deliveries.slice(0, 3).map((d) => (
                 <div key={d.id} className="p-3 rounded-lg border border-slate-200 bg-slate-50/50 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-xs text-slate-900">{d.delivery_number}</span>
@@ -245,7 +285,7 @@ export default function DashboardOverviewPage() {
                       variant={d.status === 'delivered' ? 'success' : 'default'}
                       className="text-[10px] capitalize"
                     >
-                      {d.status.replace('_', ' ')}
+                      {d.status?.replace('_', ' ')}
                     </Badge>
                   </div>
                   <div className="text-[11px] text-slate-600">
@@ -253,7 +293,7 @@ export default function DashboardOverviewPage() {
                     <p className="text-slate-500 font-mono">{d.vehicle_number}</p>
                   </div>
                   <div className="text-[10px] text-slate-500 flex items-center justify-between pt-1 border-t border-slate-200">
-                    <span>Tujuan: {d.project?.name.substring(0, 24)}...</span>
+                    <span>Tujuan: {d.project?.name ? d.project.name.substring(0, 24) + '...' : 'Site Proyek'}</span>
                   </div>
                 </div>
               ))}

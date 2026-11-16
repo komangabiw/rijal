@@ -26,7 +26,7 @@ const ROLE_OPTIONS: { role: UserRole; label: string; icon: React.ReactNode }[] =
 ];
 
 export function Header() {
-  const { user, role, switchRole, logout, sidebarCollapsed, toggleSidebar, toggleMobileMenu } = useAuth();
+  const { user, role, logout, sidebarCollapsed, toggleSidebar, toggleMobileMenu } = useAuth();
 
   // Smart toggle handler: on desktop toggles sidebarCollapsed, on mobile opens slide-over drawer
   const handleToggle = () => {
@@ -38,6 +38,7 @@ export function Header() {
   };
 
   const firstName = user?.full_name ? user.full_name.split(' ')[0] : 'Admin';
+  const currentRoleOption = ROLE_OPTIONS.find((opt) => opt.role === role) || ROLE_OPTIONS[0];
 
   return (
     <header className="sticky top-0 z-30 h-16 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/80 px-4 sm:px-6 flex items-center justify-between gap-4 transition-colors">
@@ -63,7 +64,7 @@ export function Header() {
         </div>
       </div>
 
-      {/* Right section: Notifications + Role Switcher + User Info (Name, Email, Avatar) + Logout */}
+      {/* Right section: Notifications + Role Badge + User Info (Name, Email, Avatar) + Logout */}
       <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
         {/* Notifications button with red badge */}
         <div className="relative">
@@ -77,29 +78,21 @@ export function Header() {
           <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 ring-2 ring-zinc-950"></span>
         </div>
 
-        {/* Dynamic Role Switcher Dropdown */}
-        <div className="flex items-center gap-1 bg-zinc-900 px-2 py-1 rounded-lg border border-zinc-800">
-          <select
-            value={role}
-            onChange={(e) => switchRole(e.target.value as UserRole)}
-            className="text-xs font-medium bg-transparent border-none text-zinc-200 shadow-none focus:outline-none cursor-pointer max-w-[110px] sm:max-w-none truncate"
-          >
-            {ROLE_OPTIONS.map((opt) => (
-              <option key={opt.role} value={opt.role} className="bg-zinc-900 text-zinc-200">
-                {opt.label}
-              </option>
-            ))}
-          </select>
+        {/* Authenticated Role Badge (Read-only, no switcher) */}
+        <div className="flex items-center gap-1.5 bg-zinc-900 px-2.5 py-1 rounded-lg border border-zinc-800 text-xs font-medium text-zinc-200">
+          {currentRoleOption.icon}
+          <span className="hidden sm:inline">{currentRoleOption.label}</span>
+          <span className="sm:hidden">{currentRoleOption.label.split(' ')[0]}</span>
         </div>
 
-        {/* User Info (Name, Email & Avatar) - Moved to top right */}
+        {/* User Info (Name, Email & Avatar) - In top right */}
         <div className="flex items-center gap-2.5 pl-1 border-l border-zinc-800/80">
           <div className="hidden md:flex flex-col text-right min-w-0">
             <span className="text-xs font-semibold text-white truncate max-w-[160px]">
               {user?.full_name || 'Bambang Sudibyo'}
             </span>
             <span className="text-[10px] text-zinc-400 truncate max-w-[160px]">
-              {user?.email || 'admin@telekomunikasi.co.id'}
+              {user?.email || 'superadmin@telekomunikasi.co.id'}
             </span>
           </div>
 

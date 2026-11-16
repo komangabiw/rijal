@@ -20,7 +20,7 @@ import {
 export const DEMO_PROFILES: Profile[] = [
   {
     id: 'a0000000-0000-0000-0000-000000000001',
-    email: 'admin@telekomunikasi.co.id',
+    email: 'superadmin@telekomunikasi.co.id',
     full_name: 'Bambang Sudibyo (Super Admin)',
     phone: '+62811800100',
     role: 'super_admin',
@@ -33,7 +33,7 @@ export const DEMO_PROFILES: Profile[] = [
   },
   {
     id: 'a0000000-0000-0000-0000-000000000002',
-    email: 'hr@telekomunikasi.co.id',
+    email: 'hradmin@telekomunikasi.co.id',
     full_name: 'Siti Rahmawati (HR Admin)',
     phone: '+62812800200',
     role: 'hr_admin',
@@ -46,7 +46,7 @@ export const DEMO_PROFILES: Profile[] = [
   },
   {
     id: 'a0000000-0000-0000-0000-000000000003',
-    email: 'pm@telekomunikasi.co.id',
+    email: 'projectmanager@telekomunikasi.co.id',
     full_name: 'Dedi Kurniawan, ST (Project Manager)',
     phone: '+62813800300',
     role: 'project_manager',

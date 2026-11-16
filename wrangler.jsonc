@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "rijal-telecom-erp",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-11-16",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "vars": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://txoaumfxfymyzvdpyxhi.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_xeCi3MMb3WKdfFV3pvESjw_RAgg_psi",
+    "NEXT_PUBLIC_APP_URL": "https://rijal.setorgmail.com",
+    "NEXT_PUBLIC_APP_NAME": "PT Telekomunikasi Operations ERP",
+    "NEXT_PUBLIC_COMPANY_NAME": "PT Telekomunikasi Indonesia"
+  }
+}

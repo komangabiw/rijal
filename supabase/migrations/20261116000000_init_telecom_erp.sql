@@ -561,10 +561,10 @@ create index idx_delivery_orders_status on public.delivery_orders(status);
 -- ============================================================================
 
 insert into storage.buckets (id, name, public) values 
-  ('attendance_photos', 'attendance_photos', true),
-  ('progress_photos', 'progress_photos', true),
-  ('finance_receipts', 'finance_receipts', false),
-  ('logistics_pod', 'logistics_pod', true)
+  ('attendance-photos', 'attendance-photos', true),
+  ('project-progress', 'project-progress', true),
+  ('finance-receipts', 'finance-receipts', false),
+  ('logistics-pod', 'logistics-pod', true)
 on conflict (id) do nothing;
 
 -- ============================================================================
@@ -820,42 +820,42 @@ create policy "Delivery order items viewable by operational roles"
 create policy "Attendance photos public read, authenticated insert"
   on storage.objects for select
   to public
-  using (bucket_id = 'attendance_photos');
+  using (bucket_id in ('attendance-photos', 'attendance_photos'));
 
 create policy "Attendance photos authenticated upload"
   on storage.objects for insert
   to authenticated
-  with check (bucket_id = 'attendance_photos');
+  with check (bucket_id in ('attendance-photos', 'attendance_photos'));
 
 create policy "Progress photos public read, authenticated insert"
   on storage.objects for select
   to public
-  using (bucket_id = 'progress_photos');
+  using (bucket_id in ('project-progress', 'progress_photos'));
 
 create policy "Progress photos authenticated upload"
   on storage.objects for insert
   to authenticated
-  with check (bucket_id = 'progress_photos');
+  with check (bucket_id in ('project-progress', 'progress_photos'));
 
 create policy "Finance receipts authorized access only"
   on storage.objects for select
   to authenticated
-  using (bucket_id = 'finance_receipts');
+  using (bucket_id in ('finance-receipts', 'finance_receipts'));
 
 create policy "Finance receipts upload"
   on storage.objects for insert
   to authenticated
-  with check (bucket_id = 'finance_receipts');
+  with check (bucket_id in ('finance-receipts', 'finance_receipts'));
 
 create policy "POD photos and signatures public read"
   on storage.objects for select
   to public
-  using (bucket_id = 'logistics_pod');
+  using (bucket_id in ('logistics-pod', 'logistics_pod'));
 
 create policy "POD photos and signatures upload"
   on storage.objects for insert
   to authenticated
-  with check (bucket_id = 'logistics_pod');
+  with check (bucket_id in ('logistics-pod', 'logistics_pod'));
 
 -- ============================================================================
 -- 11. AUTOMATED TRIGGERS & BUSINESS LOGIC

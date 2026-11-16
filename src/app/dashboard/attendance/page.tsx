@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { WebcamCapture } from '@/components/ui/webcam-capture';
 import { DEMO_OFFICES } from '@/lib/mock-data';
-import { Attendance, AttendanceStatus } from '@/types/database';
+import { Attendance, AttendanceStatus, OfficeLocation } from '@/types/database';
 import { formatDate, formatDateTime } from '@/lib/utils';
 import { fetchAttendances, submitClockIn } from '@/lib/api-service';
 import {
@@ -18,12 +18,30 @@ import {
   Download,
   Navigation,
   ShieldCheck,
+  ShieldAlert,
   RotateCw,
   ZoomIn,
   X,
   Clock,
   User,
+  AlertTriangle,
 } from 'lucide-react';
+
+// Haversine formula to calculate distance between user and office in meters
+function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371e3; // Earth radius in meters
+  const phi1 = (lat1 * Math.PI) / 180;
+  const phi2 = (lat2 * Math.PI) / 180;
+  const deltaPhi = ((lat2 - lat1) * Math.PI) / 180;
+  const deltaLambda = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+    Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return Math.round(R * c);
+}
 
 interface PhotoLightboxData {
   url: string;
@@ -40,6 +58,7 @@ interface PhotoLightboxData {
 export default function AttendancePage() {
   const { user } = useAuth();
   const [attendances, setAttendances] = useState<Attendance[]>([]);
+  const [offices, setOffices] = useState<OfficeLocation[]>(DEMO_OFFICES);
   const [loading, setLoading] = useState(true);
   const [selectedOffice, setSelectedOffice] = useState(DEMO_OFFICES[0].id);
   const [attendanceType, setAttendanceType] = useState<AttendanceStatus>('present');
@@ -58,8 +77,40 @@ export default function AttendancePage() {
 
   useEffect(() => {
     loadData();
+    loadOffices();
     handleGetLocation();
   }, []);
+
+  const loadOffices = async () => {
+    try {
+      const res = await fetch('/api/offices');
+      if (res.ok) {
+        const json = await res.json();
+        if (Array.isArray(json.offices) && json.offices.length > 0) {
+          setOffices(json.offices);
+          if (!selectedOffice || !json.offices.some((o: OfficeLocation) => o.id === selectedOffice)) {
+            setSelectedOffice(json.offices[0].id);
+          }
+          return;
+        }
+      }
+    } catch {}
+
+    // Fallback localStorage
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('pt_telecom_cms_offices');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setOffices(parsed);
+            return;
+          }
+        }
+      } catch {}
+    }
+    setOffices(DEMO_OFFICES);
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -100,9 +151,21 @@ export default function AttendancePage() {
   const todayStr = new Date().toISOString().slice(0, 10);
   const todayRecord = attendances.find((a) => a.user_id === user?.id && a.date === todayStr);
 
-  const activeOfficeObj = DEMO_OFFICES.find((o) => o.id === selectedOffice);
+  const activeOfficeObj = offices.find((o) => o.id === selectedOffice) || offices[0] || DEMO_OFFICES[0];
+  const currentDistance = activeOfficeObj
+    ? getDistanceMeters(coords.lat, coords.lng, activeOfficeObj.latitude, activeOfficeObj.longitude)
+    : 0;
+  const maxAllowedRadius = activeOfficeObj?.radius_meters || 100;
+  const isWithinRadius = currentDistance <= maxAllowedRadius;
 
   const handleClockIn = async () => {
+    if (!isWithinRadius) {
+      alert(
+        `Gagal presensi: Posisi Anda saat ini berjarak ${currentDistance} meter dari pusat ${activeOfficeObj.name}. Batas toleransi maksimal adalah ${maxAllowedRadius} meter. Silakan mendekat ke lokasi kantor.`
+      );
+      return;
+    }
+
     if (!selfieBlob) {
       alert('Silakan ambil foto selfie terlebih dahulu sebagai bukti kehadiran K3.');
       return;
@@ -110,14 +173,13 @@ export default function AttendancePage() {
 
     setIsSubmitting(true);
     try {
-      const activeOffice = DEMO_OFFICES.find((o) => o.id === selectedOffice);
       const newRecord = await submitClockIn({
         userId: user?.id || 'a0000000-0000-0000-0000-000000000006',
         status: attendanceType,
         latitude: coords.lat,
         longitude: coords.lng,
-        officeId: selectedOffice,
-        address: activeOffice ? activeOffice.name : 'Kantor Pusat PT Telekomunikasi',
+        officeId: activeOfficeObj.id,
+        address: activeOfficeObj ? activeOfficeObj.name : 'Kantor Pusat PT Telekomunikasi',
         notes: notes || 'Presensi terverifikasi via Web Camera & Geofencing GPS',
         photoBlob: selfieBlob,
       });
@@ -303,47 +365,58 @@ export default function AttendancePage() {
                       onChange={(e) => setSelectedOffice(e.target.value)}
                       className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                     >
-                      {DEMO_OFFICES.map((off) => (
+                      {offices.map((off) => (
                         <option key={off.id} value={off.id}>
-                          {off.name} (Radius {off.radius_meters}m)
+                          {off.name} (Batas Radius: {off.radius_meters}m)
                         </option>
                       ))}
                     </select>
                   </div>
 
-                  {/* Live GPS Coordinates Detection */}
-                  <div className="p-3 rounded-xl bg-zinc-950/70 border border-zinc-800 text-xs space-y-2">
+                  {/* Geofence Distance Status (Coordinates hidden per security policy) */}
+                  <div className="p-3.5 rounded-xl bg-zinc-950/70 border border-zinc-800 text-xs space-y-2.5">
                     <div className="flex items-center justify-between text-zinc-300 font-medium">
                       <span className="flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-blue-400" />
-                        Koordinat GPS Live
+                        <Navigation className="w-3.5 h-3.5 text-blue-400" />
+                        Status Radius Geofencing GPS
                       </span>
                       <button
                         onClick={handleGetLocation}
                         type="button"
-                        className="text-blue-400 hover:text-blue-300 font-semibold underline text-[11px]"
+                        className="text-blue-400 hover:text-blue-300 font-semibold underline text-[11px] flex items-center gap-1"
                       >
-                        Perbarui GPS
+                        <RotateCw className="w-3 h-3" />
+                        Perbarui Lokasi
                       </button>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-[11px] text-zinc-400 font-mono">
-                      <div className="bg-zinc-900 p-1.5 rounded border border-zinc-800">
-                        Lat: {coords.lat}
+
+                    {isWithinRadius ? (
+                      <div className="p-3 rounded-lg bg-emerald-950/50 border border-emerald-800/80 space-y-1 text-emerald-200">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
+                          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                          <span>Terverifikasi di Area Presensi Kantor</span>
+                        </div>
+                        <p className="text-[11px] text-emerald-300/90 leading-relaxed">
+                          Jarak posisi Anda: <strong className="text-white">{currentDistance} meter</strong> dari pusat {activeOfficeObj.name}. (Batas toleransi maksimal: <strong className="text-white">{maxAllowedRadius} meter</strong>).
+                        </p>
                       </div>
-                      <div className="bg-zinc-900 p-1.5 rounded border border-zinc-800">
-                        Lng: {coords.lng}
+                    ) : (
+                      <div className="p-3 rounded-lg bg-rose-950/50 border border-rose-800/80 space-y-1 text-rose-200">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-rose-400">
+                          <ShieldAlert className="w-4 h-4 text-rose-400" />
+                          <span>Di Luar Batas Radius Presensi ({currentDistance}m)</span>
+                        </div>
+                        <p className="text-[11px] text-rose-300/90 leading-relaxed">
+                          Posisi Anda terdeteksi berjarak <strong className="text-white">{currentDistance} meter</strong> dari pusat {activeOfficeObj.name}. Batas toleransi maksimal kantor ini adalah <strong className="text-white">{maxAllowedRadius} meter</strong>. Tombol clock-in dinonaktifkan otomatis hingga Anda berada di dalam radius.
+                        </p>
                       </div>
-                    </div>
-                    <p className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      Geofence Valid: Terverifikasi berada di radius kerja site
-                    </p>
+                    )}
                   </div>
 
                   {/* Live Selfie Camera Capture Component with HUD & Watermarking */}
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-zinc-300">
-                      Foto Selfie Bukti Kehadiran (Dengan Cap Jam & Koordinat)
+                      Foto Selfie Bukti Kehadiran K3 (Verifikasi Live)
                     </label>
                     <WebcamCapture
                       locationName={activeOfficeObj ? activeOfficeObj.name : 'Kantor Pusat PT Telekomunikasi'}
@@ -366,10 +439,22 @@ export default function AttendancePage() {
                   {/* Submit Clock-In Button */}
                   <Button
                     onClick={handleClockIn}
-                    disabled={isSubmitting || !selfieBlob}
-                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 shadow-md shadow-blue-600/30"
+                    disabled={isSubmitting || !selfieBlob || !isWithinRadius}
+                    className={`w-full font-semibold py-2.5 rounded-xl transition-all ${
+                      !isWithinRadius
+                        ? 'bg-zinc-800 text-zinc-400 border border-zinc-700 cursor-not-allowed opacity-80'
+                        : !selfieBlob
+                        ? 'bg-blue-600/60 text-white cursor-not-allowed'
+                        : 'bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/30'
+                    }`}
                   >
-                    {isSubmitting ? 'Mengunggah Foto & Presensi...' : 'Konfirmasi & Clock In'}
+                    {isSubmitting
+                      ? 'Mengunggah Foto & Presensi...'
+                      : !isWithinRadius
+                      ? `Di Luar Radius Kantor (${currentDistance}m / Maks ${maxAllowedRadius}m)`
+                      : !selfieBlob
+                      ? 'Ambil Foto Selfie Terlebih Dahulu'
+                      : 'Konfirmasi & Clock In'}
                   </Button>
                 </div>
               )}
@@ -384,7 +469,7 @@ export default function AttendancePage() {
               <CardTitle className="text-sm font-bold text-white flex items-center justify-between">
                 <span>Lokasi Geofencing Terdaftar</span>
                 <Badge variant="outline" className="text-[10px] bg-zinc-800 border-zinc-700 text-zinc-300">
-                  {DEMO_OFFICES.length} Titik Presensi
+                  {offices.length} Titik Presensi
                 </Badge>
               </CardTitle>
               <CardDescription className="text-xs text-zinc-400">
@@ -392,30 +477,43 @@ export default function AttendancePage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 space-y-3">
-              {DEMO_OFFICES.map((off) => (
-                <div
-                  key={off.id}
-                  className="p-3.5 rounded-xl border border-zinc-800 bg-zinc-950/60 hover:border-zinc-700 transition-all flex items-start justify-between gap-4"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-xs text-white">{off.name}</span>
-                      <Badge variant="outline" className="text-[10px] bg-emerald-950/60 text-emerald-400 border-emerald-800/60">
-                        Aktif
-                      </Badge>
+              {offices.map((off) => {
+                const offDist = getDistanceMeters(coords.lat, coords.lng, off.latitude, off.longitude);
+                const isNear = offDist <= off.radius_meters;
+                return (
+                  <div
+                    key={off.id}
+                    className="p-3.5 rounded-xl border border-zinc-800 bg-zinc-950/60 hover:border-zinc-700 transition-all flex items-start justify-between gap-4"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-xs text-white">{off.name}</span>
+                        <Badge variant="outline" className="text-[10px] bg-emerald-950/60 text-emerald-400 border-emerald-800/60">
+                          Aktif
+                        </Badge>
+                        {isNear ? (
+                          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/40 text-[10px]">
+                            Dalam Radius ({offDist}m)
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-zinc-900 text-zinc-400 border-zinc-800 text-[10px]">
+                            Jarak: {offDist > 1000 ? `${(offDist / 1000).toFixed(1)} km` : `${offDist}m`}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-zinc-400">{off.address}</p>
+                      <div className="text-[11px] text-zinc-400 flex items-center gap-2 pt-1">
+                        <span className="text-cyan-400 font-medium">Batas Lock Radius: {off.radius_meters} meter</span>
+                        <span className="text-zinc-600">•</span>
+                        <span className="text-zinc-400 text-[10px]">Proteksi Backend PostgreSQL</span>
+                      </div>
                     </div>
-                    <p className="text-xs text-zinc-400">{off.address}</p>
-                    <div className="text-[11px] text-zinc-400 font-mono flex items-center gap-3 pt-1">
-                      <span>Lat: {off.latitude}</span>
-                      <span>Lng: {off.longitude}</span>
-                      <span className="text-blue-400 font-semibold">Radius: {off.radius_meters}m</span>
+                    <div className="p-2 rounded-lg bg-blue-950/60 border border-blue-800/60 text-blue-400 shrink-0">
+                      <MapPin className="w-4 h-4" />
                     </div>
                   </div>
-                  <div className="p-2 rounded-lg bg-blue-950/60 border border-blue-800/60 text-blue-400 shrink-0">
-                    <MapPin className="w-4 h-4" />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         </div>

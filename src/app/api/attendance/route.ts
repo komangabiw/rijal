@@ -1,5 +1,22 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { DEMO_OFFICES } from '@/lib/mock-data';
+
+// Haversine formula to calculate accurate distance between two GPS coordinates in meters
+function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371e3; // Earth radius in meters
+  const phi1 = (lat1 * Math.PI) / 180;
+  const phi2 = (lat2 * Math.PI) / 180;
+  const deltaPhi = ((lat2 - lat1) * Math.PI) / 180;
+  const deltaLambda = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+    Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return Math.round(R * c);
+}
 
 export async function GET() {
   const supabase = createAdminClient();
@@ -50,6 +67,49 @@ export async function POST(req: Request) {
     const validOfficeId =
       officeId && officeId.length === 36 ? officeId : null;
 
+    // 1. BACKEND RADIUS LOCK ENFORCEMENT
+    let targetOffice = DEMO_OFFICES.find((o) => o.id === validOfficeId);
+
+    // Try fetching live office location from database
+    if (validOfficeId) {
+      try {
+        const { data: dbOffice } = await supabase
+          .from('office_locations')
+          .select('*')
+          .eq('id', validOfficeId)
+          .single();
+        if (dbOffice) targetOffice = dbOffice;
+      } catch {}
+    }
+
+    if (!targetOffice && DEMO_OFFICES.length > 0) {
+      targetOffice = DEMO_OFFICES[0];
+    }
+
+    let calculatedDistance = 15;
+    if (targetOffice && latitude !== undefined && longitude !== undefined) {
+      calculatedDistance = calculateDistanceMeters(
+        Number(latitude),
+        Number(longitude),
+        targetOffice.latitude,
+        targetOffice.longitude
+      );
+
+      const maxAllowedRadius = targetOffice.radius_meters || 100;
+
+      // Backend lock check: Reject if exceeding allowed radius
+      if (calculatedDistance > maxAllowedRadius) {
+        return NextResponse.json(
+          {
+            error: `Gagal presensi: Posisi Anda berada di luar radius kantor yang diizinkan (jarak ${calculatedDistance} meter, batas maksimal ${maxAllowedRadius} meter). Silakan mendekat ke area lokasi presensi.`,
+            distance: calculatedDistance,
+            maxRadius: maxAllowedRadius,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     const payload = {
       user_id: validUserId,
       date: new Date().toISOString().slice(0, 10),
@@ -57,10 +117,10 @@ export async function POST(req: Request) {
       clock_in_time: new Date().toISOString(),
       clock_in_latitude: latitude || -6.239308,
       clock_in_longitude: longitude || 106.82711,
-      clock_in_address: address || 'Site Lapangan FO',
+      clock_in_address: address || targetOffice?.name || 'Kantor Pusat PT Telekomunikasi',
       clock_in_photo_url: photoUrl || null,
       clock_in_office_id: validOfficeId,
-      clock_in_distance_meters: 15,
+      clock_in_distance_meters: calculatedDistance,
       notes: notes || null,
       verification_status: 'approved',
     };

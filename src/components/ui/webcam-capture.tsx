@@ -194,13 +194,10 @@ export function WebcamCapture({
       const locText = locationName || 'Site Lapangan PT Telekomunikasi';
       ctx.fillText(`📍 ${locText.length > 50 ? locText.substring(0, 50) + '...' : locText}`, 16, bannerY + 44);
 
-      // Line 3: GPS Coordinates & Enterprise Tag
+      // Line 3: Geofence Verification Status & Enterprise Tag (Coordinates hidden per user security privacy policy)
       ctx.fillStyle = '#34d399'; // Emerald-400
       ctx.font = '600 12px monospace';
-      const coordsText = coordinates
-        ? `🌐 GPS: ${coordinates.lat.toFixed(6)}, ${coordinates.lng.toFixed(6)}`
-        : '🌐 GPS: Terverifikasi Geofence';
-      ctx.fillText(`${coordsText}  •  PT TELEKOMUNIKASI ERP`, 16, bannerY + 65);
+      ctx.fillText(`🛡️ VERIFIKASI GEOFENCING VALID  •  PT TELEKOMUNIKASI ERP`, 16, bannerY + 65);
 
       const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
       const blob = dataURLtoBlob(dataUrl);

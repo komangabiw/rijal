@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { MapPicker } from '@/components/ui/map-picker';
 import { DEMO_PROFILES, DEMO_OFFICES } from '@/lib/mock-data';
 import {
   SlidersHorizontal,
@@ -1077,6 +1078,31 @@ on conflict (id) do update set
                 />
               </div>
 
+              {/* Interactive Map Picker (Pilih Titik Lewat Maps) */}
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+                    Pilih Titik Langsung Lewat Maps
+                  </Label>
+                  <span className="text-[10px] text-zinc-400">
+                    Klik atau geser pin langsung pada peta
+                  </span>
+                </div>
+                <MapPicker
+                  latitude={parseFloat(officeLat) || -6.239308}
+                  longitude={parseFloat(officeLng) || 106.82711}
+                  radiusMeters={officeRadius || 100}
+                  onChange={(lat, lng, address) => {
+                    setOfficeLat(lat.toString());
+                    setOfficeLng(lng.toString());
+                    if (address && !officeAddress) {
+                      setOfficeAddress(address);
+                    }
+                  }}
+                />
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs text-zinc-300">Titik Latitude</Label>
@@ -1239,6 +1265,32 @@ on conflict (id) do update set
                   value={editingOffice.address || ''}
                   onChange={(e) => setEditingOffice({ ...editingOffice, address: e.target.value })}
                   className="mt-1 bg-zinc-950 border-zinc-800 text-white text-xs h-9 rounded-xl"
+                />
+              </div>
+
+              {/* Interactive Map Picker (Pilih Titik Langsung Lewat Maps Sesuai Gambar) */}
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+                    Pilih Titik Langsung Lewat Maps
+                  </Label>
+                  <span className="text-[10px] text-zinc-400">
+                    Klik atau geser pin langsung pada peta
+                  </span>
+                </div>
+                <MapPicker
+                  latitude={editingOffice.latitude || -6.239308}
+                  longitude={editingOffice.longitude || 106.82711}
+                  radiusMeters={editingOffice.radius_meters || 100}
+                  onChange={(lat, lng, address) => {
+                    setEditingOffice({
+                      ...editingOffice,
+                      latitude: lat,
+                      longitude: lng,
+                      ...(address && !editingOffice.address ? { address } : {}),
+                    });
+                  }}
                 />
               </div>
 

@@ -1,9 +1,30 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { MapPin, Search, LocateFixed, Navigation, CheckCircle2, Layers } from 'lucide-react';
+import {
+  MapPin,
+  Search,
+  LocateFixed,
+  Navigation,
+  CheckCircle2,
+  Layers,
+  X,
+  Loader2,
+  Building2,
+  Compass,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+
+export interface PlaceSuggestion {
+  id: string;
+  title: string;
+  subtitle: string;
+  fullAddress: string;
+  lat: number;
+  lng: number;
+  type?: string;
+}
 
 interface MapPickerProps {
   latitude: number;
@@ -21,13 +42,18 @@ export function MapPicker({
   className = '',
 }: MapPickerProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const searchWrapperRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
   const circleRef = useRef<any>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
+  const [selectedPlaceName, setSelectedPlaceName] = useState<string | null>(null);
+
   const [currentCoords, setCurrentCoords] = useState<{ lat: number; lng: number }>({
     lat: latitude || -6.239308,
     lng: longitude || 106.82711,
@@ -56,11 +82,10 @@ export function MapPicker({
 
     const initMap = async () => {
       if (!mapContainerRef.current) return;
-      if (mapInstanceRef.current) return; // Sudah diinisialisasi
+      if (mapInstanceRef.current) return;
 
       try {
         const L = (await import('leaflet')).default;
-        // Import css Leaflet secara runtime
         if (typeof document !== 'undefined' && !document.getElementById('leaflet-css')) {
           const link = document.createElement('link');
           link.id = 'leaflet-css';
@@ -74,17 +99,17 @@ export function MapPicker({
         const defaultLat = latitude || -6.239308;
         const defaultLng = longitude || 106.82711;
 
-        // Custom icon pin marker agar tajam dan konsisten tanpa asset eksternal bermasalah
+        // Custom icon pin marker bernuansa modern cyan
         const customPinIcon = L.divIcon({
           className: 'custom-leaflet-marker',
           html: `
-            <div style="position: relative; width: 36px; height: 36px; transform: translate(-50%, -100%); display: flex; align-items: center; justify-content: center;">
-              <div style="width: 32px; height: 32px; background: #0891b2; border: 2.5px solid #ffffff; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-shadow: 0 4px 14px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;">
+            <div style="position: relative; width: 38px; height: 38px; transform: translate(-50%, -100%); display: flex; align-items: center; justify-content: center; cursor: grab;">
+              <div style="width: 34px; height: 34px; background: #0891b2; border: 2.5px solid #ffffff; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-shadow: 0 6px 18px rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;">
                 <div style="width: 10px; height: 10px; background: #ffffff; border-radius: 50%;"></div>
               </div>
             </div>
           `,
-          iconSize: [36, 36],
+          iconSize: [38, 38],
           iconAnchor: [0, 0],
         });
 
@@ -96,7 +121,6 @@ export function MapPicker({
 
         mapInstanceRef.current = map;
 
-        // OpenStreetMap CartoDB Dark Matter / OSM Standard Tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           maxZoom: 19,
           attribution: '&copy; OpenStreetMap contributors',
@@ -127,6 +151,7 @@ export function MapPicker({
           setCurrentCoords({ lat: cleanLat, lng: cleanLng });
           marker.setLatLng([cleanLat, cleanLng]);
           circle.setLatLng([cleanLat, cleanLng]);
+          setSelectedPlaceName(null);
           onChange(cleanLat, cleanLng);
         });
 
@@ -137,10 +162,10 @@ export function MapPicker({
           const cleanLng = Number(latLng.lng.toFixed(6));
           setCurrentCoords({ lat: cleanLat, lng: cleanLng });
           circle.setLatLng([cleanLat, cleanLng]);
+          setSelectedPlaceName(null);
           onChange(cleanLat, cleanLng);
         });
 
-        // Fix Leaflet tile loading container size
         setTimeout(() => {
           map.invalidateSize();
         }, 200);
@@ -167,48 +192,65 @@ export function MapPicker({
     }
   }, [radiusMeters]);
 
-  // Handler Cari Alamat / Lokasi via OSM Nominatim
-  const handleSearchLocation = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-
-    setIsSearching(true);
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          searchQuery
-        )}&countrycodes=id&limit=1`,
-        {
-          headers: {
-            'Accept-Language': 'id',
-          },
-        }
-      );
-      if (res.ok) {
-        const results = await res.json();
-        if (Array.isArray(results) && results.length > 0) {
-          const item = results[0];
-          const newLat = Number(parseFloat(item.lat).toFixed(6));
-          const newLng = Number(parseFloat(item.lon).toFixed(6));
-
-          setCurrentCoords({ lat: newLat, lng: newLng });
-          onChange(newLat, newLng, item.display_name);
-
-          if (mapInstanceRef.current && markerRef.current && circleRef.current) {
-            mapInstanceRef.current.setView([newLat, newLng], 16);
-            markerRef.current.setLatLng([newLat, newLng]);
-            circleRef.current.setLatLng([newLat, newLng]);
-          }
-        } else {
-          alert('Lokasi tidak ditemukan di peta. Coba masukkan nama jalan atau daerah yang lebih spesifik.');
-        }
+  // Click outside listener untuk menutup dropdown Google Places autocomplete
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        searchWrapperRef.current &&
+        !searchWrapperRef.current.contains(e.target as Node)
+      ) {
+        setShowDropdown(false);
       }
-    } catch (err) {
-      console.warn('Gagal mencari alamat peta:', err);
-      alert('Gagal menghubungkan ke layanan pencarian peta.');
-    } finally {
-      setIsSearching(false);
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Live Debounced Autocomplete Search seperti di Google
+  useEffect(() => {
+    const trimmed = searchQuery.trim();
+    if (trimmed.length < 2) {
+      setSuggestions([]);
+      return;
     }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      setShowDropdown(true);
+      try {
+        const res = await fetch(`/api/places/search?q=${encodeURIComponent(trimmed)}`);
+        if (res.ok) {
+          const json = await res.json();
+          setSuggestions(json.places || []);
+        }
+      } catch (err) {
+        console.warn('Autocomplete fetch error:', err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Handler saat item dropdown dipilih
+  const handleSelectPlace = (place: PlaceSuggestion) => {
+    setSearchQuery(place.title);
+    setSelectedPlaceName(place.title);
+    setShowDropdown(false);
+    setCurrentCoords({ lat: place.lat, lng: place.lng });
+
+    // Animasi flyTo seperti Google Maps
+    if (mapInstanceRef.current && markerRef.current && circleRef.current) {
+      mapInstanceRef.current.flyTo([place.lat, place.lng], 17, {
+        duration: 1.2,
+      });
+      markerRef.current.setLatLng([place.lat, place.lng]);
+      circleRef.current.setLatLng([place.lat, place.lng]);
+    }
+
+    onChange(place.lat, place.lng, place.fullAddress);
   };
 
   // Handler Gunakan GPS Browser Saat Ini
@@ -225,10 +267,13 @@ export function MapPicker({
         const myLng = Number(pos.coords.longitude.toFixed(6));
 
         setCurrentCoords({ lat: myLat, lng: myLng });
+        setSelectedPlaceName('Lokasi GPS Saat Ini');
+        setSearchQuery('');
+        setShowDropdown(false);
         onChange(myLat, myLng);
 
         if (mapInstanceRef.current && markerRef.current && circleRef.current) {
-          mapInstanceRef.current.setView([myLat, myLng], 17);
+          mapInstanceRef.current.flyTo([myLat, myLng], 17, { duration: 1.2 });
           markerRef.current.setLatLng([myLat, myLng]);
           circleRef.current.setLatLng([myLat, myLng]);
         }
@@ -245,39 +290,111 @@ export function MapPicker({
 
   return (
     <div className={`space-y-2.5 ${className}`}>
-      {/* Top Map Toolbar: Search & GPS Button */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-        <form onSubmit={handleSearchLocation} className="flex-1 flex items-center gap-1.5">
+      {/* Top Map Toolbar: Google Places Autocomplete Search & GPS Button */}
+      <div ref={searchWrapperRef} className="relative z-[500]">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          {/* Search Input Box */}
           <div className="relative flex-1">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
             <Input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Ketik nama jalan / gedung / kota untuk cari titik..."
-              className="pl-8 text-xs bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-500 rounded-xl h-8.5"
+              onFocus={() => {
+                if (suggestions.length > 0) setShowDropdown(true);
+              }}
+              placeholder="Cari lokasi kantor, gedung, cabang (misal: jne taruna, SIER, dll)..."
+              className="pl-8 pr-8 text-xs bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-500 rounded-xl h-9 focus:border-cyan-500 transition-all shadow-sm"
             />
+            {/* Clear or Loading Icon */}
+            {isSearching ? (
+              <Loader2 className="w-3.5 h-3.5 absolute right-3 top-1/2 -translate-y-1/2 text-cyan-400 animate-spin" />
+            ) : searchQuery ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setSuggestions([]);
+                  setShowDropdown(false);
+                }}
+                className="p-1 rounded-full text-zinc-500 hover:text-white absolute right-2.5 top-1/2 -translate-y-1/2"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            ) : null}
           </div>
-          <Button
-            type="submit"
-            disabled={isSearching || !searchQuery.trim()}
-            size="sm"
-            className="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 h-8.5 px-3 rounded-xl shrink-0"
-          >
-            {isSearching ? 'Mencari...' : 'Cari di Peta'}
-          </Button>
-        </form>
 
-        <Button
-          type="button"
-          onClick={handleUseCurrentLocation}
-          disabled={isLocating}
-          size="sm"
-          className="text-xs bg-cyan-950/70 hover:bg-cyan-900 border border-cyan-800/80 text-cyan-300 h-8.5 px-3 rounded-xl shrink-0 flex items-center gap-1.5 shadow-sm"
-        >
-          <LocateFixed className="w-3.5 h-3.5" />
-          {isLocating ? 'Mendeteksi...' : 'Lokasi Saya'}
-        </Button>
+          {/* Quick GPS Button */}
+          <Button
+            type="button"
+            onClick={handleUseCurrentLocation}
+            disabled={isLocating}
+            size="sm"
+            className="text-xs bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-800/80 text-cyan-300 h-9 px-3 rounded-xl shrink-0 flex items-center gap-1.5 shadow-sm"
+          >
+            <LocateFixed className="w-3.5 h-3.5" />
+            {isLocating ? 'Mendeteksi...' : 'Lokasi Saya'}
+          </Button>
+        </div>
+
+        {/* Dropdown Menu Seperti di Google (Autocomplete Suggestions) */}
+        {showDropdown && (
+          <div className="absolute left-0 right-0 top-full mt-1.5 bg-zinc-900/98 backdrop-blur-xl border border-zinc-700/80 rounded-2xl shadow-2xl overflow-hidden max-h-72 overflow-y-auto divide-y divide-zinc-800 animate-in fade-in zoom-in-95 duration-150">
+            <div className="px-3 py-1.5 bg-zinc-950/70 border-b border-zinc-800 flex items-center justify-between text-[10px] text-zinc-400">
+              <span className="font-semibold flex items-center gap-1">
+                <Compass className="w-3 h-3 text-cyan-400" />
+                Pilih Titik Lokasi Terkait
+              </span>
+              <span>{suggestions.length} Hasil Ditemukan</span>
+            </div>
+
+            {suggestions.length > 0 ? (
+              suggestions.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => handleSelectPlace(item)}
+                  className="p-3 hover:bg-zinc-800/80 cursor-pointer transition-colors flex items-start gap-2.5 group"
+                >
+                  <div className="p-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-cyan-400 group-hover:border-cyan-600 group-hover:text-cyan-300 transition-colors shrink-0 mt-0.5">
+                    <MapPin className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-bold text-white group-hover:text-cyan-300 truncate transition-colors">
+                        {item.title}
+                      </p>
+                      {item.type && (
+                        <span className="text-[9px] uppercase tracking-wider bg-zinc-950 border border-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded shrink-0">
+                          {item.type}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-zinc-400 line-clamp-1 mt-0.5">
+                      {item.subtitle}
+                    </p>
+                    <p className="text-[10px] font-mono text-zinc-500 mt-0.5">
+                      Koordinat: {item.lat.toFixed(6)}, {item.lng.toFixed(6)}
+                    </p>
+                  </div>
+                </div>
+              ))
+            ) : isSearching ? (
+              <div className="p-4 text-center text-xs text-zinc-400 flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+                <span>Mencari titik lokasi di peta...</span>
+              </div>
+            ) : (
+              <div className="p-4 text-center space-y-1">
+                <p className="text-xs font-semibold text-zinc-300">
+                  Tidak ada titik ditemukan untuk "{searchQuery}"
+                </p>
+                <p className="text-[11px] text-zinc-500">
+                  Coba ketikkan nama jalan, kota, atau langsung klik titik yang diinginkan pada peta di bawah.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Map Container */}
@@ -287,7 +404,7 @@ export function MapPicker({
         {/* Floating Instruction & Info Badge */}
         <div className="absolute top-2 left-2 z-[400] bg-zinc-950/90 backdrop-blur-md px-2.5 py-1.5 rounded-lg border border-zinc-800 text-[10px] text-zinc-300 flex items-center gap-2 shadow-md">
           <MapPin className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-          <span>Klik atau seret pin pada peta untuk memilih titik lokasi kantor</span>
+          <span>Klik atau seret pin pada peta untuk memilih titik lokasi presensi</span>
         </div>
 
         {/* Floating Coordinates & Radius Badge */}

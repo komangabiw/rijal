@@ -224,7 +224,7 @@ export default function FinancePage() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto rounded-lg border border-slate-200">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-xs min-w-[720px]">
               <thead className="bg-slate-50 text-slate-600 uppercase font-semibold border-b border-slate-200">
                 <tr>
                   <th className="p-3">No. Klaim</th>
@@ -337,7 +337,7 @@ export default function FinancePage() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto rounded-lg border border-slate-200">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-xs min-w-[720px]">
               <thead className="bg-slate-50 text-slate-600 uppercase font-semibold border-b border-slate-200">
                 <tr>
                   <th className="p-3">No. Invoice</th>
@@ -374,9 +374,9 @@ export default function FinancePage() {
 
       {/* Reimbursement Claim Modal Form */}
       {showClaimModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="w-full max-w-lg bg-white shadow-2xl rounded-2xl border-slate-300 overflow-hidden">
-            <CardHeader className="bg-slate-50 border-b border-slate-200 pb-3">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <Card className="w-full max-w-lg bg-white shadow-2xl rounded-2xl border-slate-300 overflow-hidden max-h-[92vh] flex flex-col">
+            <CardHeader className="bg-slate-50 border-b border-slate-200 pb-3 shrink-0">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
                   <ReceiptText className="w-4 h-4 text-amber-600" />
@@ -390,7 +390,7 @@ export default function FinancePage() {
                 </button>
               </div>
             </CardHeader>
-            <CardContent className="p-5 space-y-4">
+            <CardContent className="p-4 sm:p-5 space-y-4 overflow-y-auto">
               <form onSubmit={handleCreateClaim} className="space-y-4">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-700">Pilih Proyek Terkait</label>

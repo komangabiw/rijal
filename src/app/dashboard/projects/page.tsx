@@ -351,9 +351,9 @@ export default function ProjectsPage() {
 
       {/* Input Progress Log Modal */}
       {showLogModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="w-full max-w-lg bg-white shadow-2xl rounded-2xl border-slate-300 overflow-hidden">
-            <CardHeader className="bg-slate-50 border-b border-slate-200 pb-3">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <Card className="w-full max-w-lg bg-white shadow-2xl rounded-2xl border-slate-300 overflow-hidden max-h-[92vh] flex flex-col">
+            <CardHeader className="bg-slate-50 border-b border-slate-200 pb-3 shrink-0">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
                   <Camera className="w-4 h-4 text-blue-600" />
@@ -370,7 +370,7 @@ export default function ProjectsPage() {
                 Proyek: {selectedProject.name} ({selectedProject.project_code})
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-5 space-y-4">
+            <CardContent className="p-4 sm:p-5 space-y-4 overflow-y-auto">
               <form onSubmit={handleAddLog} className="space-y-4">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-700">

@@ -333,7 +333,7 @@ export default function AttendancePage() {
                 Rekap Presensi Karyawan & Teknisi
               </CardTitle>
               <CardDescription className="text-xs text-slate-500">
-                Daftar log kehadiran terkini dengan bukti foto dan verifikasi GPS
+                Daftar log kehadiran terkini dengan bukti foto dan verifikasi GPS (geser tabel untuk detail)
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -344,8 +344,8 @@ export default function AttendancePage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto rounded-lg border border-slate-200">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto rounded-lg border border-slate-200 -mx-2 sm:mx-0">
+            <table className="w-full text-left text-xs min-w-[680px]">
               <thead className="bg-slate-50 text-slate-600 uppercase font-semibold border-b border-slate-200">
                 <tr>
                   <th className="p-3">Karyawan</th>

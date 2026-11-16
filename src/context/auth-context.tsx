@@ -11,14 +11,17 @@ interface AuthContextType {
   setUser: (profile: Profile) => void;
   isLoading: boolean;
   logout: () => void;
+  mobileMenuOpen: boolean;
+  setMobileMenuOpen: (open: boolean) => void;
+  toggleMobileMenu: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // Default to Super Admin so all initial views can be inspected immediately
   const [currentUser, setCurrentUser] = useState<Profile>(DEMO_PROFILES[0]);
   const [isLoading, setIsLoading] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const savedRole = localStorage.getItem('pt_telecom_role') as UserRole | null;
@@ -35,9 +38,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
-    // Return to default technician or login
     window.location.href = '/login';
   };
+
+  const toggleMobileMenu = () => setMobileMenuOpen((prev) => !prev);
 
   return (
     <AuthContext.Provider
@@ -48,6 +52,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser: setCurrentUser,
         isLoading,
         logout,
+        mobileMenuOpen,
+        setMobileMenuOpen,
+        toggleMobileMenu,
       }}
     >
       {children}

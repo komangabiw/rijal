@@ -15,9 +15,21 @@ export async function GET() {
         .order('created_at', { ascending: false }),
     ]);
 
+    let projects = projectsRes.data || [];
+    if (projectsRes.error) {
+      const fallback = await supabase.from('projects').select('*').order('created_at', { ascending: false });
+      projects = fallback.data || [];
+    }
+
+    let logs = logsRes.data || [];
+    if (logsRes.error) {
+      const fallback = await supabase.from('project_progress_logs').select('*').order('created_at', { ascending: false });
+      logs = fallback.data || [];
+    }
+
     return NextResponse.json({
-      projects: projectsRes.data || [],
-      logs: logsRes.data || [],
+      projects,
+      logs,
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
@@ -58,11 +70,22 @@ export async function POST(req: Request) {
       issue_description: issueDescription || null,
     };
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('project_progress_logs')
       .insert(payload)
       .select('*, technician:profiles(*), site:sites(*)')
       .single();
+
+    if (error) {
+      console.warn('POST progress log join failed, fallback raw insert:', error.message);
+      const rawRes = await supabase
+        .from('project_progress_logs')
+        .insert(payload)
+        .select('*')
+        .single();
+      data = rawRes.data;
+      error = rawRes.error;
+    }
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });

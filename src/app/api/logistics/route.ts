@@ -4,13 +4,14 @@ import { createAdminClient } from '@/lib/supabase/admin';
 export async function GET() {
   const supabase = createAdminClient();
   try {
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('delivery_orders')
       .select('*, warehouse:warehouses(*), project:projects(*), site:sites(*)')
       .order('created_at', { ascending: false });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      const fallback = await supabase.from('delivery_orders').select('*').order('created_at', { ascending: false });
+      data = fallback.data;
     }
 
     return NextResponse.json({ data: data || [] });
@@ -52,11 +53,22 @@ export async function POST(req: Request) {
           : 'a0000000-0000-0000-0000-000000000005',
     };
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('delivery_orders')
       .insert(payload)
       .select('*, warehouse:warehouses(*), project:projects(*), site:sites(*)')
       .single();
+
+    if (error) {
+      console.warn('POST delivery order join failed, fallback raw insert:', error.message);
+      const rawRes = await supabase
+        .from('delivery_orders')
+        .insert(payload)
+        .select('*')
+        .single();
+      data = rawRes.data;
+      error = rawRes.error;
+    }
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
@@ -68,25 +80,30 @@ export async function POST(req: Request) {
   }
 }
 
-export async function PUT(req: Request) {
+export async function PATCH(req: Request) {
   const supabase = createAdminClient();
   try {
     const body = await req.json();
-    const { deliveryOrderId, recipientName, notes, signatureUrl, podPhotoUrl } = body;
+    const { id, status, recipientName, recipientPhone, recipientSignatureUrl, podPhotoUrl, podNotes } = body;
 
-    const payload = {
-      status: 'delivered',
-      delivered_at: new Date().toISOString(),
-      recipient_name: recipientName,
-      recipient_signature_url: signatureUrl || null,
-      pod_photo_url: podPhotoUrl || null,
-      pod_notes: notes || null,
-    };
+    if (!id) {
+      return NextResponse.json({ error: 'Missing delivery order ID' }, { status: 400 });
+    }
+
+    const updates: any = { status, updated_at: new Date().toISOString() };
+    if (status === 'delivered') {
+      updates.delivered_at = new Date().toISOString();
+      if (recipientName) updates.recipient_name = recipientName;
+      if (recipientPhone) updates.recipient_phone = recipientPhone;
+      if (recipientSignatureUrl) updates.recipient_signature_url = recipientSignatureUrl;
+      if (podPhotoUrl) updates.pod_photo_url = podPhotoUrl;
+      if (podNotes) updates.pod_notes = podNotes;
+    }
 
     const { data, error } = await supabase
       .from('delivery_orders')
-      .update(payload)
-      .eq('id', deliveryOrderId)
+      .update(updates)
+      .eq('id', id)
       .select()
       .single();
 

@@ -4,14 +4,19 @@ import { createAdminClient } from '@/lib/supabase/admin';
 export async function GET() {
   const supabase = createAdminClient();
   try {
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('attendances')
-      .select('*, profile:profiles(*)')
+      .select('*, profile:profiles!attendances_user_id_fkey(*)')
       .order('created_at', { ascending: false });
 
+    // Fallback if profiles relationship is not yet populated
     if (error) {
-      console.error('API GET attendances error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.warn('API GET attendances join warning, falling back to select *:', error.message);
+      const fallback = await supabase
+        .from('attendances')
+        .select('*')
+        .order('created_at', { ascending: false });
+      data = fallback.data;
     }
 
     return NextResponse.json({ data: data || [] });
@@ -36,7 +41,7 @@ export async function POST(req: Request) {
       photoUrl,
     } = body;
 
-    // Fallback to valid technician UUID if userId is empty or legacy format
+    // Fallback to standard technician UUID
     const validUserId =
       userId && userId.length === 36
         ? userId
@@ -60,11 +65,22 @@ export async function POST(req: Request) {
       verification_status: 'approved',
     };
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('attendances')
       .upsert(payload, { onConflict: 'user_id, date' })
-      .select('*, profile:profiles(*)')
+      .select('*, profile:profiles!attendances_user_id_fkey(*)')
       .single();
+
+    if (error) {
+      console.warn('POST attendance with join failed, trying raw insert/upsert:', error.message);
+      const rawRes = await supabase
+        .from('attendances')
+        .upsert(payload, { onConflict: 'user_id, date' })
+        .select('*')
+        .single();
+      data = rawRes.data;
+      error = rawRes.error;
+    }
 
     if (error) {
       console.error('API POST attendance error:', error);

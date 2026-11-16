@@ -130,7 +130,7 @@ export function Header() {
 
         <div className="flex items-center gap-2">
           <h1 className="text-base sm:text-lg font-semibold tracking-tight text-white truncate">
-            Selamat datang kembali, {firstName}
+            Selamat datang, {firstName}
           </h1>
         </div>
       </div>
@@ -147,7 +147,7 @@ export function Header() {
           >
             <Bell className="w-4 h-4" />
             {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center ring-2 ring-zinc-950 animate-pulse">
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-600 text-[10px] font-semibold text-white flex items-center justify-center leading-none">
                 {unreadCount}
               </span>
             )}

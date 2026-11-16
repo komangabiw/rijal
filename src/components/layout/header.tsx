@@ -3,10 +3,8 @@
 import React from 'react';
 import { useAuth } from '@/context/auth-context';
 import { UserRole } from '@/types/database';
-import { Button } from '@/components/ui/button';
 import {
   Bell,
-  Search,
   PanelLeft,
   PanelLeftClose,
   LogOut,
@@ -47,7 +45,7 @@ export function Header() {
       <div className="flex items-center gap-3 min-w-0">
         <button
           onClick={handleToggle}
-          className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-colors focus:outline-none border border-transparent hover:border-zinc-700"
+          className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors focus:outline-none border border-transparent hover:border-zinc-800"
           title={sidebarCollapsed ? 'Buka Sidebar' : 'Tutup Sidebar'}
           aria-label="Toggle Sidebar"
         >
@@ -65,17 +63,8 @@ export function Header() {
         </div>
       </div>
 
-      {/* Right section: Search + Notifications + Role Switcher + Avatar */}
-      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-        {/* Search button */}
-        <button
-          className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 border border-transparent hover:border-zinc-800 transition-colors"
-          title="Search"
-          aria-label="Search"
-        >
-          <Search className="w-4 h-4" />
-        </button>
-
+      {/* Right section: Notifications + Role Switcher + User Info (Name, Email, Avatar) + Logout */}
+      <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
         {/* Notifications button with red badge */}
         <div className="relative">
           <button
@@ -93,7 +82,7 @@ export function Header() {
           <select
             value={role}
             onChange={(e) => switchRole(e.target.value as UserRole)}
-            className="text-xs font-medium bg-transparent border-none text-zinc-200 shadow-none focus:outline-none cursor-pointer max-w-[120px] sm:max-w-none truncate"
+            className="text-xs font-medium bg-transparent border-none text-zinc-200 shadow-none focus:outline-none cursor-pointer max-w-[110px] sm:max-w-none truncate"
           >
             {ROLE_OPTIONS.map((opt) => (
               <option key={opt.role} value={opt.role} className="bg-zinc-900 text-zinc-200">
@@ -103,23 +92,33 @@ export function Header() {
           </select>
         </div>
 
-        {/* User Avatar with profile picture */}
-        <div className="flex items-center gap-2 pl-1">
+        {/* User Info (Name, Email & Avatar) - Moved to top right */}
+        <div className="flex items-center gap-2.5 pl-1 border-l border-zinc-800/80">
+          <div className="hidden md:flex flex-col text-right min-w-0">
+            <span className="text-xs font-semibold text-white truncate max-w-[160px]">
+              {user?.full_name || 'Bambang Sudibyo'}
+            </span>
+            <span className="text-[10px] text-zinc-400 truncate max-w-[160px]">
+              {user?.email || 'admin@telekomunikasi.co.id'}
+            </span>
+          </div>
+
           <img
             src={user?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120'}
             alt={user?.full_name || 'User Avatar'}
             className="w-8 h-8 rounded-full object-cover border border-zinc-700/80 shrink-0"
           />
-        </div>
 
-        {/* Logout Button (Desktop) */}
-        <button
-          onClick={logout}
-          className="hidden sm:flex p-2 text-zinc-500 hover:text-red-400 hover:bg-zinc-900 rounded-lg transition-colors border border-transparent hover:border-zinc-800"
-          title="Keluar Akun"
-        >
-          <LogOut className="w-4 h-4" />
-        </button>
+          {/* Desktop Logout Button in top right */}
+          <button
+            onClick={logout}
+            className="flex items-center gap-1.5 py-1.5 px-2 text-xs font-medium text-zinc-400 hover:text-red-400 hover:bg-zinc-900 rounded-lg transition-colors border border-transparent hover:border-zinc-800"
+            title="Keluar Akun"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden lg:inline text-[11px]">Logout</span>
+          </button>
+        </div>
       </div>
     </header>
   );

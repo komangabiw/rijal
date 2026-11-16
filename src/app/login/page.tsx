@@ -28,10 +28,10 @@ const ROLE_ICONS: Record<UserRole, React.ReactNode> = {
 const ROLE_SHORT_LABELS: Record<UserRole, string> = {
   super_admin: 'Super Admin',
   hr_admin: 'HR Admin',
-  project_manager: 'Project Manager',
+  project_manager: 'Project Mgr',
   finance: 'Finance',
   warehouse_logistics: 'Warehouse',
-  field_technician: 'Field Technician',
+  field_technician: 'Field Tech',
 };
 
 export default function LoginPage() {
@@ -71,46 +71,53 @@ export default function LoginPage() {
     <AuthFormSplitScreen
       logo={
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-700 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/25 border border-blue-400/30">
-            <Radio className="w-5 h-5 animate-pulse" />
+          <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-700/80 flex items-center justify-center text-white shadow-sm">
+            <Radio className="w-4 h-4 text-blue-400 animate-pulse" />
           </div>
           <div>
-            <span className="font-extrabold text-white text-base tracking-wide block leading-none">
+            <span className="font-bold text-white text-sm tracking-wide block leading-none">
               PT TELEKOMUNIKASI
             </span>
-            <span className="text-[10px] text-blue-400 font-mono tracking-wider block mt-0.5">
+            <span className="text-[10px] text-zinc-400 font-mono tracking-wider block mt-0.5">
               INTERNAL ERP & OPS PORTAL
             </span>
           </div>
         </div>
       }
       title="Selamat Datang!"
-      description="Masukkan email dan kata sandi akun resmi operasional telekomunikasi Anda."
-      imageSrc="https://images.unsplash.com/photo-1544717305-2782549b5136?w=1600&auto=format&fit=crop&q=85"
-      imageAlt="Telecommunication tower and fiber optic infrastructure"
+      description="Masukkan kredensial akun resmi operasional telekomunikasi Anda."
       onSubmit={handleFormSubmit}
       forgotPasswordHref="#"
       createAccountHref="#"
       extraContent={
-        <div className="pt-2 border-t border-slate-800 space-y-2">
+        <div className="pt-2 border-t border-zinc-800 space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1">
+            <span className="text-[10px] font-semibold text-zinc-400 flex items-center gap-1">
               <Sparkles className="w-3 h-3 text-amber-400" />
               Quick Role Login (Evaluator Mode)
             </span>
-            <span className="text-[10px] text-slate-500 font-mono">6 Roles</span>
+            <span className="text-[9px] text-zinc-500 font-mono">6 Roles</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-            {(Object.keys(ROLE_SHORT_LABELS) as UserRole[]).map((r) => (
+          <div className="grid grid-cols-2 gap-1.5">
+            {DEMO_PROFILES.map((profile) => (
               <button
-                key={r}
+                key={profile.id}
                 type="button"
-                onClick={() => handleQuickRole(r)}
-                className="flex items-center gap-1.5 p-2 rounded-lg bg-slate-800/80 hover:bg-slate-800 hover:border-blue-500/50 border border-slate-700/80 text-left transition-all text-[11px] text-slate-200"
+                onClick={() => handleQuickRole(profile.role)}
+                className="flex items-center gap-2 p-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-800 border border-zinc-700/60 hover:border-blue-500/50 transition-colors text-left group"
               >
-                {ROLE_ICONS[r]}
-                <span className="truncate font-medium">{ROLE_SHORT_LABELS[r]}</span>
+                <div className="p-1 rounded bg-zinc-900 border border-zinc-700 shrink-0">
+                  {ROLE_ICONS[profile.role]}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[11px] font-semibold text-zinc-200 group-hover:text-blue-400 truncate leading-tight">
+                    {ROLE_SHORT_LABELS[profile.role]}
+                  </div>
+                  <div className="text-[9px] text-zinc-500 truncate">
+                    {(profile.division || 'Operations').split(' ')[0]}
+                  </div>
+                </div>
               </button>
             ))}
           </div>

@@ -19,6 +19,7 @@ import {
   X,
   Upload,
   RotateCw,
+  CheckCircle2,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -69,11 +70,14 @@ export default function ProjectsPage() {
       fetchProjects(),
       fetchProgressLogs(),
     ]);
-    setProjects(fetchedProjects);
-    if (fetchedProjects.length > 0) {
+    if (fetchedProjects && fetchedProjects.length > 0) {
+      setProjects(fetchedProjects);
       setSelectedProject(fetchedProjects[0]);
+    } else {
+      setProjects(DEMO_PROJECTS);
+      setSelectedProject(DEMO_PROJECTS[0]);
     }
-    setLogs(fetchedLogs);
+    setLogs(fetchedLogs || []);
     setLoading(false);
   };
 
@@ -99,13 +103,13 @@ export default function ProjectsPage() {
 
   const handleAddLog = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    if (!selectedProject) return;
 
+    setIsSubmitting(true);
     const volumeNum = Number(logVolume) || 0;
 
     const newLog = await submitProgressLog({
       projectId: selectedProject.id,
-      siteId: 'd0000000-0000-0000-0000-000000000001',
       technicianId: user?.id || 'a0000000-0000-0000-0000-000000000006',
       volumeRealized: volumeNum,
       description: logDesc || 'Penarikan kabel lanjutan dan perapihan span FO.',
@@ -152,15 +156,15 @@ export default function ProjectsPage() {
   }));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-zinc-100">
       {/* Page Title & Action */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            <FolderGit2 className="w-6 h-6 text-blue-600" />
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+            <FolderGit2 className="w-5 h-5 text-blue-400" />
             Implementasi Proyek & Site Lapangan
           </h1>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-zinc-400 mt-0.5">
             Monitoring progres fisik penarikan kabel fiber optik, target vs aktual, serta upload bukti foto 3 tahap ke Supabase Storage.
           </p>
         </div>
@@ -170,14 +174,14 @@ export default function ProjectsPage() {
             onClick={loadData}
             variant="outline"
             size="sm"
-            className="text-xs border-slate-300"
+            className="text-xs bg-zinc-900 border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800"
           >
             <RotateCw className="w-3.5 h-3.5 mr-1" />
             Refresh
           </Button>
           <Button
             onClick={() => setShowLogModal(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow"
+            className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md shadow-blue-600/30"
           >
             <Plus className="w-4 h-4 mr-1.5" />
             Input Log Progres & Bukti Foto
@@ -185,39 +189,39 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {/* Target vs Actual Comparison Chart */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-bold text-slate-900 flex items-center justify-between">
+      {/* Target vs Actual Comparison Chart Card */}
+      <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl">
+        <CardHeader className="pb-2 border-b border-zinc-800/80">
+          <CardTitle className="text-sm font-bold text-white flex items-center justify-between">
             <span>Perbandingan Target vs. Realisasi Fisik (Semua Proyek)</span>
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="outline" className="text-xs bg-zinc-800 border-zinc-700 text-zinc-300">
               Meters / Sites
             </Badge>
           </CardTitle>
-          <CardDescription className="text-xs text-slate-500">
+          <CardDescription className="text-xs text-zinc-400">
             Realisasi otomatis tersinkronisasi dari seluruh log harian teknisi lapangan
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4">
           <div className="h-60 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} />
-                <YAxis tick={{ fontSize: 11, fill: '#64748b' }} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#71717a' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: '#71717a' }} axisLine={false} tickLine={false} />
                 <Tooltip
                   formatter={(val) => [Number(val).toLocaleString('id-ID'), 'Volume']}
                   contentStyle={{
-                    backgroundColor: '#0f172a',
+                    backgroundColor: '#18181b',
                     borderRadius: '8px',
-                    border: 'none',
+                    borderColor: '#27272a',
                     color: '#fff',
                     fontSize: '12px',
                   }}
                 />
                 <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }} />
-                <Bar dataKey="Target" fill="#94a3b8" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Realisasi" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Target" fill="#52525b" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Realisasi" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -232,83 +236,93 @@ export default function ProjectsPage() {
             <div
               key={proj.id}
               onClick={() => setSelectedProject(proj)}
-              className={`p-4 rounded-xl border bg-white cursor-pointer transition-all ${
+              className={`p-4 rounded-2xl border cursor-pointer transition-all ${
                 isSelected
-                  ? 'border-blue-600 ring-2 ring-blue-600/20 shadow-md'
-                  : 'border-slate-200 hover:border-slate-300 shadow-sm'
+                  ? 'border-blue-500 bg-zinc-900/90 ring-1 ring-blue-500/30 shadow-lg'
+                  : 'border-zinc-800 bg-zinc-900 hover:border-zinc-700'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="font-mono text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
+                <span className="font-mono text-xs font-bold text-blue-400 bg-blue-950/60 border border-blue-800/60 px-2 py-0.5 rounded-md">
                   {proj.project_code}
                 </span>
                 <Badge
-                  variant={proj.status === 'in_progress' ? 'default' : 'secondary'}
-                  className="text-[10px] capitalize"
+                  variant="outline"
+                  className="text-[10px] capitalize bg-zinc-800 border-zinc-700 text-zinc-300"
                 >
                   {proj.status.replace('_', ' ')}
                 </Badge>
               </div>
 
-              <h3 className="font-bold text-sm text-slate-900 mt-2 line-clamp-1">{proj.name}</h3>
-              <p className="text-xs text-slate-500 mt-0.5">{proj.client?.name}</p>
+              <h3 className="font-semibold text-xs text-white mt-2 line-clamp-2">
+                {proj.name}
+              </h3>
 
-              {/* Progress bar */}
-              <div className="mt-4 space-y-1.5">
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-500">Pencapaian:</span>
-                  <span className="font-bold text-blue-600">{proj.progress_percentage}%</span>
+              <div className="mt-3 space-y-1.5">
+                <div className="flex justify-between text-xs text-zinc-400">
+                  <span>Progres Fisik</span>
+                  <span className="font-bold text-blue-400">{proj.progress_percentage}%</span>
                 </div>
-                <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
                   <div
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(100, proj.progress_percentage)}%` }}
+                    className="bg-blue-500 h-1.5 rounded-full transition-all duration-500"
+                    style={{ width: `${proj.progress_percentage}%` }}
                   />
                 </div>
-                <div className="flex justify-between text-[11px] text-slate-400 font-mono">
-                  <span>Aktual: {Number(proj.actual_volume).toLocaleString('id-ID')}</span>
-                  <span>Target: {Number(proj.target_volume).toLocaleString('id-ID')} {proj.target_unit}</span>
+                <div className="flex justify-between text-[11px] text-zinc-400 pt-1">
+                  <span>
+                    Aktual: <strong className="text-zinc-200">{Number(proj.actual_volume).toLocaleString('id-ID')}</strong> {proj.target_unit}
+                  </span>
+                  <span>
+                    Target: {Number(proj.target_volume).toLocaleString('id-ID')}
+                  </span>
                 </div>
               </div>
 
-              <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-                <span>RAB: {formatRupiah(Number(proj.total_budget))}</span>
-                <span>PIC: {proj.project_manager?.full_name?.split(' ')[0] || 'Dedi'}</span>
+              <div className="mt-3 pt-2 border-t border-zinc-800 text-[11px] text-zinc-400 flex justify-between">
+                <span>RAB Anggaran:</span>
+                <span className="font-semibold text-zinc-200">{formatRupiah(proj.total_budget)}</span>
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* Selected Project Detailed View: Sites & Daily Progress Logs */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Sites list for selected project */}
-        <div className="lg:col-span-5 space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-bold text-slate-900 flex items-center justify-between">
-                <span>Daftar Site Proyek ({selectedProject.project_code})</span>
-                <Badge variant="outline" className="text-[10px]">
-                  {DEMO_SITES.filter((s) => s.project_id === selectedProject.id).length} Sites Terdaftar
+      {/* Sites & Recent Progress Logs Container */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Sites List */}
+        <div className="lg:col-span-1 space-y-3">
+          <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl">
+            <CardHeader className="pb-3 border-b border-zinc-800/80">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
+                  Daftar Site Proyek ({selectedProject.project_code})
+                </CardTitle>
+                <Badge variant="outline" className="text-[10px] bg-zinc-800 border-zinc-700 text-zinc-300">
+                  {DEMO_SITES.filter((s) => s.project_id === selectedProject.id).length} Sites
                 </Badge>
-              </CardTitle>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="p-3 space-y-2">
               {DEMO_SITES.filter((s) => s.project_id === selectedProject.id).map((site) => (
-                <div key={site.id} className="p-3 rounded-lg border border-slate-200 bg-slate-50/60 space-y-2">
+                <div
+                  key={site.id}
+                  className="p-3 rounded-xl border border-zinc-800/80 bg-zinc-950/60 hover:border-zinc-700 transition-colors"
+                >
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-red-500" />
-                      {site.site_id_ext} - {site.name}
+                    <span className="font-mono text-xs font-semibold text-zinc-200 flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-blue-400" />
+                      {site.site_id_ext}
                     </span>
-                    <Badge variant={site.status === 'completed' ? 'success' : 'default'} className="text-[10px]">
+                    <Badge variant="outline" className="text-[10px] bg-emerald-950/60 text-emerald-400 border-emerald-800/60">
                       {site.status}
                     </Badge>
                   </div>
-                  <p className="text-[11px] text-slate-500">{site.address}, {site.city}</p>
-                  <div className="flex justify-between items-center text-xs pt-1 border-t border-slate-200/80">
-                    <span className="text-slate-500">Progres Site:</span>
-                    <span className="font-bold text-blue-600">{site.progress_percentage}%</span>
+                  <p className="text-xs font-medium text-zinc-300 mt-1">{site.name}</p>
+                  <p className="text-[10px] text-zinc-400 truncate">{site.address}</p>
+                  <div className="mt-2 flex items-center justify-between text-[11px] text-zinc-400">
+                    <span>Progres Site:</span>
+                    <span className="font-bold text-emerald-400">{site.progress_percentage}%</span>
                   </div>
                 </div>
               ))}
@@ -316,85 +330,89 @@ export default function ProjectsPage() {
           </Card>
         </div>
 
-        {/* Daily Progress Logs with 3-Stage Photo Evidence */}
-        <div className="lg:col-span-7 space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
+        {/* Progress Logs Stream */}
+        <div className="lg:col-span-2 space-y-3">
+          <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl">
+            <CardHeader className="pb-3 border-b border-zinc-800/80">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-sm font-bold text-slate-900">
+                  <CardTitle className="text-sm font-bold text-white">
                     Log Progres Harian & Bukti Foto Lapangan
                   </CardTitle>
-                  <CardDescription className="text-xs text-slate-500">
+                  <CardDescription className="text-xs text-zinc-400">
                     Dokumentasi Before, Progress, dan After tersimpan di Supabase Storage
                   </CardDescription>
                 </div>
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="outline" className="text-xs bg-zinc-800 border-zinc-700 text-zinc-300">
                   {logs.length} Laporan
                 </Badge>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-4 space-y-4">
+              {logs.length === 0 && (
+                <div className="text-center py-10 text-xs text-zinc-400">
+                  Belum ada log progres tersimpan. Klik tombol di atas untuk membuat laporan pertama.
+                </div>
+              )}
               {logs.map((log) => (
-                <div key={log.id} className="p-4 rounded-xl border border-slate-200 bg-white space-y-3 shadow-sm">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-xs text-slate-900">
-                          {log.technician?.full_name || 'Teknisi FO'}
-                        </span>
-                        <span className="text-[11px] text-slate-400 font-mono">
-                          {formatDate(log.log_date)}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-600 mt-1">{log.description}</p>
+                <div
+                  key={log.id}
+                  className="p-4 rounded-xl border border-zinc-800 bg-zinc-950/60 space-y-3"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-white">{log.technician?.full_name || 'Teknisi Lapangan'}</span>
+                      <span className="text-zinc-500">•</span>
+                      <span className="text-zinc-400">{formatDate(log.log_date)}</span>
                     </div>
-                    <Badge variant="outline" className="text-xs font-semibold text-blue-700 bg-blue-50 border-blue-200 shrink-0">
+                    <Badge variant="outline" className="text-[10px] bg-blue-950/60 text-blue-400 border-blue-800/60 w-fit">
                       +{log.volume_realized} {selectedProject.target_unit}
                     </Badge>
                   </div>
 
-                  {/* 3-Stage Photo Gallery (Before, Progress, After) */}
+                  <p className="text-xs text-zinc-300 leading-relaxed">{log.description}</p>
+
+                  {/* 3-Stage Photos Grid */}
                   <div className="grid grid-cols-3 gap-2 pt-1">
                     <div className="space-y-1">
-                      <span className="text-[10px] font-semibold text-slate-500 block uppercase">
+                      <span className="text-[10px] font-semibold text-zinc-400 block uppercase">
                         1. Before
                       </span>
                       <img
-                        src={log.photo_before_url || ''}
+                        src={log.photo_before_url || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=200'}
                         alt="Before"
-                        className="w-full h-20 rounded-lg object-cover border border-slate-200 shadow-sm"
+                        className="w-full h-20 rounded-lg object-cover border border-zinc-800"
                       />
                     </div>
                     <div className="space-y-1">
-                      <span className="text-[10px] font-semibold text-blue-600 block uppercase">
+                      <span className="text-[10px] font-semibold text-blue-400 block uppercase">
                         2. Progress
                       </span>
                       <img
-                        src={log.photo_progress_url || ''}
+                        src={log.photo_progress_url || 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=200'}
                         alt="Progress"
-                        className="w-full h-20 rounded-lg object-cover border border-blue-200 shadow-sm"
+                        className="w-full h-20 rounded-lg object-cover border border-blue-900/50"
                       />
                     </div>
                     <div className="space-y-1">
-                      <span className="text-[10px] font-semibold text-emerald-600 block uppercase">
-                        3. After (Selesai)
+                      <span className="text-[10px] font-semibold text-emerald-400 block uppercase">
+                        3. After
                       </span>
                       <img
-                        src={log.photo_after_url || ''}
+                        src={log.photo_after_url || 'https://images.unsplash.com/photo-1541888946425-d0fbb186156a?w=200'}
                         alt="After"
-                        className="w-full h-20 rounded-lg object-cover border border-emerald-200 shadow-sm"
+                        className="w-full h-20 rounded-lg object-cover border border-emerald-900/50"
                       />
                     </div>
                   </div>
 
-                  {/* Issue Blocker Alert */}
+                  {/* Issue Alert */}
                   {log.has_issues && (
-                    <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 flex items-start gap-2 text-xs text-red-800">
-                      <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                    <div className="p-2.5 rounded-lg bg-red-950/50 border border-red-800/60 flex items-start gap-2 text-xs text-red-300">
+                      <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
                       <div>
-                        <span className="font-bold">Kendala / Blocker Lapangan:</span>
-                        <p className="text-[11px] text-red-700 mt-0.5">{log.issue_description}</p>
+                        <span className="font-bold text-red-200">Kendala Lapangan:</span>
+                        <p className="text-[11px] text-red-300 mt-0.5">{log.issue_description}</p>
                       </div>
                     </div>
                   )}
@@ -405,31 +423,31 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {/* Input Progress Log Modal with REAL 3-Stage Photo Upload */}
+      {/* Input Progress Log Modal with REAL 3-Stage Photo Upload - Clean Dark UI */}
       {showLogModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-          <Card className="w-full max-w-lg bg-white shadow-2xl rounded-2xl border-slate-300 overflow-hidden max-h-[92vh] flex flex-col">
-            <CardHeader className="bg-slate-50 border-b border-slate-200 pb-3 shrink-0">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+          <Card className="w-full max-w-lg bg-zinc-900 shadow-2xl rounded-2xl border-zinc-800 overflow-hidden max-h-[92vh] flex flex-col text-zinc-100">
+            <CardHeader className="bg-zinc-950 border-b border-zinc-800 pb-3 shrink-0">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <Camera className="w-4 h-4 text-blue-600" />
+                <CardTitle className="text-base font-bold text-white flex items-center gap-2">
+                  <Camera className="w-4 h-4 text-blue-400" />
                   Input Progres Harian & Upload Foto
                 </CardTitle>
                 <button
                   onClick={() => setShowLogModal(false)}
-                  className="p-1 rounded-md text-slate-400 hover:text-slate-700"
+                  className="p-1 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <CardDescription className="text-xs text-slate-500">
+              <CardDescription className="text-xs text-zinc-400">
                 Proyek: {selectedProject.name} ({selectedProject.project_code})
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 sm:p-5 space-y-4 overflow-y-auto">
               <form onSubmit={handleAddLog} className="space-y-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700">
+                  <label className="text-xs font-semibold text-zinc-300">
                     Volume Realisasi Hari Ini ({selectedProject.target_unit})
                   </label>
                   <Input
@@ -438,12 +456,12 @@ export default function ProjectsPage() {
                     onChange={(e) => setLogVolume(e.target.value)}
                     required
                     placeholder="Contoh: 250"
-                    className="text-xs"
+                    className="text-xs bg-zinc-800/90 border-zinc-700 text-white placeholder:text-zinc-500"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700">
+                  <label className="text-xs font-semibold text-zinc-300">
                     Deskripsi Pekerjaan & Titik Span
                   </label>
                   <Input
@@ -451,13 +469,13 @@ export default function ProjectsPage() {
                     onChange={(e) => setLogDesc(e.target.value)}
                     required
                     placeholder="Penarikan kabel FO 24C dari tiang #52 ke #60 dan splicing di ODP #4"
-                    className="text-xs"
+                    className="text-xs bg-zinc-800/90 border-zinc-700 text-white placeholder:text-zinc-500"
                   />
                 </div>
 
-                {/* Real 3-Stage Photo Upload Section */}
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
-                  <span className="text-xs font-semibold text-slate-800 block">
+                {/* 3-Stage Photo Upload Section */}
+                <div className="p-3.5 rounded-xl bg-zinc-950/80 border border-zinc-800 space-y-2.5">
+                  <span className="text-xs font-semibold text-zinc-300 block">
                     Upload Foto Lapangan (Supabase Storage: project-progress)
                   </span>
 
@@ -487,15 +505,15 @@ export default function ProjectsPage() {
                     {/* Before Photo */}
                     <div
                       onClick={() => inputBeforeRef.current?.click()}
-                      className="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-lg p-2 bg-white text-center cursor-pointer transition-colors relative min-h-[90px] flex flex-col items-center justify-center"
+                      className="border-2 border-dashed border-zinc-700 hover:border-blue-500 rounded-lg p-2 bg-zinc-900 text-center cursor-pointer transition-colors relative min-h-[90px] flex flex-col items-center justify-center group"
                     >
                       {previewBefore ? (
                         <img src={previewBefore} alt="Before" className="w-full h-16 object-cover rounded" />
                       ) : (
                         <>
-                          <Upload className="w-4 h-4 text-slate-400 mb-1" />
-                          <span className="text-[10px] font-semibold text-slate-600 block">1. Before</span>
-                          <span className="text-[9px] text-slate-400">Pilih Foto</span>
+                          <Upload className="w-4 h-4 text-zinc-500 mb-1 group-hover:text-blue-400" />
+                          <span className="text-[10px] font-semibold text-zinc-300 block">1. Before</span>
+                          <span className="text-[9px] text-zinc-500">Pilih Foto</span>
                         </>
                       )}
                     </div>
@@ -503,15 +521,15 @@ export default function ProjectsPage() {
                     {/* Progress Photo */}
                     <div
                       onClick={() => inputProgressRef.current?.click()}
-                      className="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-lg p-2 bg-white text-center cursor-pointer transition-colors relative min-h-[90px] flex flex-col items-center justify-center"
+                      className="border-2 border-dashed border-zinc-700 hover:border-blue-500 rounded-lg p-2 bg-zinc-900 text-center cursor-pointer transition-colors relative min-h-[90px] flex flex-col items-center justify-center group"
                     >
                       {previewProgress ? (
                         <img src={previewProgress} alt="Progress" className="w-full h-16 object-cover rounded" />
                       ) : (
                         <>
-                          <Upload className="w-4 h-4 text-blue-500 mb-1" />
-                          <span className="text-[10px] font-semibold text-blue-600 block">2. Progress</span>
-                          <span className="text-[9px] text-slate-400">Pilih Foto</span>
+                          <Upload className="w-4 h-4 text-blue-400 mb-1" />
+                          <span className="text-[10px] font-semibold text-blue-400 block">2. Progress</span>
+                          <span className="text-[9px] text-zinc-500">Pilih Foto</span>
                         </>
                       )}
                     </div>
@@ -519,58 +537,59 @@ export default function ProjectsPage() {
                     {/* After Photo */}
                     <div
                       onClick={() => inputAfterRef.current?.click()}
-                      className="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-lg p-2 bg-white text-center cursor-pointer transition-colors relative min-h-[90px] flex flex-col items-center justify-center"
+                      className="border-2 border-dashed border-zinc-700 hover:border-blue-500 rounded-lg p-2 bg-zinc-900 text-center cursor-pointer transition-colors relative min-h-[90px] flex flex-col items-center justify-center group"
                     >
                       {previewAfter ? (
                         <img src={previewAfter} alt="After" className="w-full h-16 object-cover rounded" />
                       ) : (
                         <>
-                          <Upload className="w-4 h-4 text-emerald-500 mb-1" />
-                          <span className="text-[10px] font-semibold text-emerald-600 block">3. After</span>
-                          <span className="text-[9px] text-slate-400">Pilih Foto</span>
+                          <Upload className="w-4 h-4 text-emerald-400 mb-1" />
+                          <span className="text-[10px] font-semibold text-emerald-400 block">3. After</span>
+                          <span className="text-[9px] text-zinc-500">Pilih Foto</span>
                         </>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* Blocker Toggle */}
-                <div className="space-y-2 pt-1 border-t border-slate-200">
-                  <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700">
+                {/* Has Issue / Blocker Toggle */}
+                <div className="space-y-2 pt-1">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs text-zinc-300">
                     <input
                       type="checkbox"
                       checked={hasIssue}
                       onChange={(e) => setHasIssue(e.target.checked)}
-                      className="rounded text-red-600 focus:ring-red-500 w-4 h-4"
+                      className="rounded border-zinc-700 bg-zinc-800 text-red-600 focus:ring-red-500"
                     />
-                    Laporkan Kendala Lapangan (Blocker / Issue)
+                    <span>Laporkan Kendala Lapangan (Blocker / Issue)</span>
                   </label>
+
                   {hasIssue && (
                     <Input
                       value={issueDesc}
                       onChange={(e) => setIssueDesc(e.target.value)}
-                      placeholder="Jelaskan kendala: Izin RW tertahan / tiang PLN patah"
-                      className="text-xs border-red-300 focus-visible:ring-red-500 bg-red-50/50"
+                      placeholder="Contoh: Izin RT/RW terkendala, jalur terhalang galian PLN"
+                      className="text-xs bg-red-950/40 border-red-800/80 text-red-200 placeholder:text-red-400"
+                      required={hasIssue}
                     />
                   )}
                 </div>
 
-                <div className="flex justify-end gap-2 pt-3">
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-800">
                   <Button
                     type="button"
                     variant="outline"
-                    size="sm"
                     onClick={() => setShowLogModal(false)}
+                    className="text-xs bg-zinc-800 border-zinc-700 text-zinc-300 hover:text-white"
                   >
                     Batal
                   </Button>
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    size="sm"
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                    className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md shadow-blue-600/30"
                   >
-                    {isSubmitting ? 'Mengunggah Foto & Menyimpan...' : 'Simpan & Update Progres'}
+                    {isSubmitting ? 'Mengunggah Foto & Menyimpan...' : 'Simpan Log Progres'}
                   </Button>
                 </div>
               </form>

@@ -1,34 +1,28 @@
 "use client";
 
+import * as React from "react";
 import { AuthFormSplitScreen } from "@/components/ui/login";
-import { Radio } from "lucide-react";
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const Logo = () => (
+  <div className="flex items-center gap-2">
+    <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
+      PT
+    </div>
+    <span className="text-xl font-bold text-white">PT Telekomunikasi</span>
+  </div>
+);
 
-export default function AuthFormSplitScreenDemo() {
-  const handleLogin = async (data: any) => {
-    console.log("Form submitted with:", data);
-    await sleep(1500);
-    alert("Login successful!");
+export function Demo() {
+  const handleFormSubmit = async (data: any) => {
+    console.log("Form submitted with data:", data);
   };
 
   return (
     <AuthFormSplitScreen
-      logo={
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
-            <Radio className="w-4 h-4 animate-pulse" />
-          </div>
-          <span className="font-bold text-white text-base tracking-wide">
-            PT TELEKOMUNIKASI
-          </span>
-        </div>
-      }
+      logo={<Logo />}
       title="Welcome!"
       description="Sign in by entering the information below"
-      imageSrc="https://images.unsplash.com/photo-1544717305-2782549b5136?w=1200&q=80"
-      imageAlt="Telecommunication fiber optic and infrastructure"
-      onSubmit={handleLogin}
+      onSubmit={handleFormSubmit}
       forgotPasswordHref="#"
       createAccountHref="#"
     />

@@ -21,7 +21,6 @@ import {
   RotateCw,
   ZoomIn,
   X,
-  ExternalLink,
   Clock,
   User,
 } from 'lucide-react';
@@ -98,27 +97,24 @@ export default function AttendancePage() {
     }
 
     setIsSubmitting(true);
-    const office = DEMO_OFFICES.find((o) => o.id === selectedOffice);
-
     try {
+      const activeOffice = DEMO_OFFICES.find((o) => o.id === selectedOffice);
       const newRecord = await submitClockIn({
         userId: user?.id || 'a0000000-0000-0000-0000-000000000006',
         status: attendanceType,
         latitude: coords.lat,
         longitude: coords.lng,
         officeId: selectedOffice,
-        address: office ? office.name : 'Kantor Pusat PT Telekomunikasi',
-        notes: notes || 'Presensi terverifikasi via Web ERP',
+        address: activeOffice ? activeOffice.name : 'Kantor Pusat PT Telekomunikasi',
+        notes: notes || 'Presensi terverifikasi via Web Camera & Geofencing GPS',
         photoBlob: selfieBlob,
       });
 
-      setAttendances((prev) => [
-        newRecord,
-        ...prev.filter((a) => a.id !== newRecord.id && a.user_id !== newRecord.user_id),
-      ]);
+      setAttendances([newRecord, ...attendances.filter((a) => a.id !== newRecord.id)]);
+      setNotes('');
+      setSelfieBlob(null);
     } catch (err: any) {
-      console.error('Clock in error:', err);
-      alert('Gagal clock in: ' + (err.message || 'Terjadi kesalahan'));
+      alert(`Gagal clock in: ${err.message || 'Terjadi kesalahan'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -145,15 +141,15 @@ export default function AttendancePage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-zinc-100">
       {/* Header & Export */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            <CalendarCheck2 className="w-6 h-6 text-blue-600" />
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+            <CalendarCheck2 className="w-5 h-5 text-blue-400" />
             Absensi Karyawan & Teknisi Lapangan
           </h1>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-zinc-400 mt-0.5">
             Validasi presensi berbasis Geofencing GPS & foto selfie live tersimpan di Supabase Storage.
           </p>
         </div>
@@ -163,7 +159,7 @@ export default function AttendancePage() {
             onClick={loadData}
             variant="outline"
             size="sm"
-            className="text-xs border-slate-300"
+            className="text-xs bg-zinc-900 border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800"
           >
             <RotateCw className="w-3.5 h-3.5 mr-1" />
             Refresh
@@ -172,9 +168,9 @@ export default function AttendancePage() {
             onClick={handleExportCSV}
             variant="outline"
             size="sm"
-            className="text-xs border-slate-300 text-slate-700 hover:bg-slate-50"
+            className="text-xs bg-zinc-900 border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800"
           >
-            <Download className="w-4 h-4 mr-1.5 text-slate-500" />
+            <Download className="w-3.5 h-3.5 mr-1.5 text-zinc-400" />
             Export CSV
           </Button>
         </div>
@@ -183,29 +179,29 @@ export default function AttendancePage() {
       {/* Clock-In Widget & Geofencing Card */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-5 space-y-4">
-          <Card className="border-blue-200/80 shadow-md bg-gradient-to-b from-white to-blue-50/30">
-            <CardHeader className="pb-3">
+          <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl shadow-lg">
+            <CardHeader className="pb-3 border-b border-zinc-800/80">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <Navigation className="w-4 h-4 text-blue-600" />
+                <CardTitle className="text-sm font-bold text-white flex items-center gap-2">
+                  <Navigation className="w-4 h-4 text-blue-400" />
                   Clock-In Presensi Hari Ini
                 </CardTitle>
-                <Badge variant="outline" className="text-[10px] bg-blue-100 text-blue-800 border-blue-200">
+                <Badge variant="outline" className="text-[10px] bg-zinc-800 text-zinc-300 border-zinc-700">
                   {formatDate(todayStr)}
                 </Badge>
               </div>
-              <CardDescription className="text-xs text-slate-500">
+              <CardDescription className="text-xs text-zinc-400">
                 Posisikan diri dalam radius kantor/site proyek yang ditugaskan
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-4 sm:p-5 space-y-4">
               {todayRecord ? (
-                <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 space-y-3">
-                  <div className="flex items-center gap-2 text-sm font-bold text-emerald-800">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-800/60 text-emerald-200 space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-bold text-emerald-300">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                     Presensi Hari Ini Berhasil Tercatat
                   </div>
-                  <div className="text-xs space-y-1 text-emerald-700">
+                  <div className="text-xs space-y-1 text-emerald-300/90">
                     <p>
                       <strong>Waktu:</strong> {formatDateTime(todayRecord.clock_in_time)}
                     </p>
@@ -244,15 +240,15 @@ export default function AttendancePage() {
                       <img
                         src={todayRecord.clock_in_photo_url || ''}
                         alt="Selfie"
-                        className="w-16 h-16 rounded-xl object-cover border-2 border-emerald-400 shadow group-hover:opacity-90 group-hover:scale-105 transition-all"
+                        className="w-16 h-16 rounded-xl object-cover border-2 border-emerald-500 shadow group-hover:scale-105 transition-all"
                       />
-                      <div className="absolute inset-0 bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
+                      <div className="absolute inset-0 bg-black/50 rounded-xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
                         <ZoomIn className="w-5 h-5" />
                       </div>
                     </div>
-                    <div className="text-[11px] text-emerald-800 space-y-0.5">
-                      <span className="font-bold block">Selfie Live Terverifikasi</span>
-                      <span className="text-emerald-700 block text-[10px]">
+                    <div className="text-[11px] text-emerald-300 space-y-0.5">
+                      <span className="font-bold block text-white">Selfie Live Terverifikasi</span>
+                      <span className="text-emerald-400 block text-[10px]">
                         Klik foto di samping untuk melihat hasil geotag watermark
                       </span>
                     </div>
@@ -262,11 +258,11 @@ export default function AttendancePage() {
                 <div className="space-y-3.5">
                   {/* Status Selection */}
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-700">Status Kehadiran</label>
+                    <label className="text-xs font-semibold text-zinc-300">Status Kehadiran</label>
                     <select
                       value={attendanceType}
                       onChange={(e) => setAttendanceType(e.target.value as AttendanceStatus)}
-                      className="w-full text-xs bg-white border border-slate-300 rounded-md p-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                      className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                     >
                       <option value="present">Hadir Normal (Present)</option>
                       <option value="field_duty">Dinas Luar / Site Lapangan (Field Duty)</option>
@@ -278,11 +274,11 @@ export default function AttendancePage() {
 
                   {/* Registered Location / Geofence Check */}
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-700">Pilih Lokasi Kantor / Hub Proyek</label>
+                    <label className="text-xs font-semibold text-zinc-300">Pilih Lokasi Kantor / Hub Proyek</label>
                     <select
                       value={selectedOffice}
                       onChange={(e) => setSelectedOffice(e.target.value)}
-                      className="w-full text-xs bg-white border border-slate-300 rounded-md p-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                      className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                     >
                       {DEMO_OFFICES.map((off) => (
                         <option key={off.id} value={off.id}>
@@ -293,29 +289,29 @@ export default function AttendancePage() {
                   </div>
 
                   {/* Live GPS Coordinates Detection */}
-                  <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-xs space-y-2">
-                    <div className="flex items-center justify-between text-slate-700 font-medium">
+                  <div className="p-3 rounded-xl bg-zinc-950/70 border border-zinc-800 text-xs space-y-2">
+                    <div className="flex items-center justify-between text-zinc-300 font-medium">
                       <span className="flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-blue-600" />
+                        <MapPin className="w-3.5 h-3.5 text-blue-400" />
                         Koordinat GPS Live
                       </span>
                       <button
                         onClick={handleGetLocation}
                         type="button"
-                        className="text-blue-600 hover:text-blue-700 font-semibold underline text-[11px]"
+                        className="text-blue-400 hover:text-blue-300 font-semibold underline text-[11px]"
                       >
                         Perbarui GPS
                       </button>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600 font-mono">
-                      <div className="bg-white p-1.5 rounded border border-slate-200">
+                    <div className="grid grid-cols-2 gap-2 text-[11px] text-zinc-400 font-mono">
+                      <div className="bg-zinc-900 p-1.5 rounded border border-zinc-800">
                         Lat: {coords.lat}
                       </div>
-                      <div className="bg-white p-1.5 rounded border border-slate-200">
+                      <div className="bg-zinc-900 p-1.5 rounded border border-zinc-800">
                         Lng: {coords.lng}
                       </div>
                     </div>
-                    <p className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
+                    <p className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
                       <ShieldCheck className="w-3.5 h-3.5" />
                       Geofence Valid: Terverifikasi berada di radius kerja site
                     </p>
@@ -323,7 +319,7 @@ export default function AttendancePage() {
 
                   {/* Live Selfie Camera Capture Component with HUD & Watermarking */}
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-700">
+                    <label className="text-xs font-semibold text-zinc-300">
                       Foto Selfie Bukti Kehadiran (Dengan Cap Jam & Koordinat)
                     </label>
                     <WebcamCapture
@@ -335,12 +331,12 @@ export default function AttendancePage() {
 
                   {/* Notes / Rencana Kerja */}
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-700">Catatan / Rencana Kerja Hari Ini</label>
+                    <label className="text-xs font-semibold text-zinc-300">Catatan / Rencana Kerja Hari Ini</label>
                     <Input
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       placeholder="Contoh: Splicing core FO Cluster Duren Jaya & patroli jalur"
-                      className="text-xs"
+                      className="text-xs bg-zinc-800/90 border-zinc-700 text-white placeholder:text-zinc-500"
                     />
                   </div>
 
@@ -348,7 +344,7 @@ export default function AttendancePage() {
                   <Button
                     onClick={handleClockIn}
                     disabled={isSubmitting || !selfieBlob}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 shadow"
+                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 shadow-md shadow-blue-600/30"
                   >
                     {isSubmitting ? 'Mengunggah Foto & Presensi...' : 'Konfirmasi & Clock In'}
                   </Button>
@@ -360,39 +356,39 @@ export default function AttendancePage() {
 
         {/* Registered Geofence Locations */}
         <div className="lg:col-span-7 space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-bold text-slate-900 flex items-center justify-between">
+          <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl">
+            <CardHeader className="pb-3 border-b border-zinc-800/80">
+              <CardTitle className="text-sm font-bold text-white flex items-center justify-between">
                 <span>Lokasi Geofencing Terdaftar</span>
-                <Badge variant="outline" className="text-[10px]">
+                <Badge variant="outline" className="text-[10px] bg-zinc-800 border-zinc-700 text-zinc-300">
                   {DEMO_OFFICES.length} Titik Presensi
                 </Badge>
               </CardTitle>
-              <CardDescription className="text-xs text-slate-500">
+              <CardDescription className="text-xs text-zinc-400">
                 Radius toleransi presensi otomatis diverifikasi oleh sistem backend PostgreSQL
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="p-4 space-y-3">
               {DEMO_OFFICES.map((off) => (
                 <div
                   key={off.id}
-                  className="p-3.5 rounded-xl border border-slate-200 bg-white hover:border-blue-400 transition-all flex items-start justify-between gap-4"
+                  className="p-3.5 rounded-xl border border-zinc-800 bg-zinc-950/60 hover:border-zinc-700 transition-all flex items-start justify-between gap-4"
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-xs text-slate-900">{off.name}</span>
-                      <Badge variant="success" className="text-[10px]">
+                      <span className="font-bold text-xs text-white">{off.name}</span>
+                      <Badge variant="outline" className="text-[10px] bg-emerald-950/60 text-emerald-400 border-emerald-800/60">
                         Aktif
                       </Badge>
                     </div>
-                    <p className="text-xs text-slate-500">{off.address}</p>
-                    <div className="text-[11px] text-slate-600 font-mono flex items-center gap-3 pt-1">
+                    <p className="text-xs text-zinc-400">{off.address}</p>
+                    <div className="text-[11px] text-zinc-400 font-mono flex items-center gap-3 pt-1">
                       <span>Lat: {off.latitude}</span>
                       <span>Lng: {off.longitude}</span>
-                      <span className="text-blue-600 font-semibold">Radius: {off.radius_meters} Meter</span>
+                      <span className="text-blue-400 font-semibold">Radius: {off.radius_meters}m</span>
                     </div>
                   </div>
-                  <div className="p-2 rounded-lg bg-blue-50 text-blue-600 shrink-0">
+                  <div className="p-2 rounded-lg bg-blue-950/60 border border-blue-800/60 text-blue-400 shrink-0">
                     <MapPin className="w-4 h-4" />
                   </div>
                 </div>
@@ -403,28 +399,28 @@ export default function AttendancePage() {
       </div>
 
       {/* Attendance History Table */}
-      <Card>
-        <CardHeader className="pb-3">
+      <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl">
+        <CardHeader className="pb-3 border-b border-zinc-800/80">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <CardTitle className="text-base font-bold text-slate-900">
+              <CardTitle className="text-sm font-bold text-white">
                 Rekap Presensi Karyawan & Teknisi
               </CardTitle>
-              <CardDescription className="text-xs text-slate-500">
+              <CardDescription className="text-xs text-zinc-400">
                 Klik pada foto thumbnail karyawan untuk memperbesar dan melihat detail bukti kehadiran
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="outline" className="text-xs bg-zinc-800 border-zinc-700 text-zinc-300">
                 Total: {attendances.length} Rekap
               </Badge>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto rounded-lg border border-slate-200 -mx-2 sm:mx-0">
+        <CardContent className="p-4">
+          <div className="overflow-x-auto rounded-xl border border-zinc-800 -mx-2 sm:mx-0">
             <table className="w-full text-left text-xs min-w-[680px]">
-              <thead className="bg-slate-50 text-slate-600 uppercase font-semibold border-b border-slate-200">
+              <thead className="bg-zinc-950/80 text-zinc-400 uppercase font-semibold border-b border-zinc-800">
                 <tr>
                   <th className="p-3">Karyawan & Foto Bukti</th>
                   <th className="p-3">Tanggal</th>
@@ -435,9 +431,9 @@ export default function AttendancePage() {
                   <th className="p-3 text-right">Verifikasi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 bg-white">
+              <tbody className="divide-y divide-zinc-800/80 bg-zinc-900">
                 {attendances.map((att) => (
-                  <tr key={att.id} className="hover:bg-slate-50/80 transition-colors">
+                  <tr key={att.id} className="hover:bg-zinc-800/50 transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-3">
                         {/* Clickable Image with Zoom Icon */}
@@ -456,13 +452,16 @@ export default function AttendancePage() {
                               notes: att.notes || undefined,
                             })
                           }
-                          className="group relative cursor-pointer shrink-0"
-                          title="Klik untuk memperbesar foto selfie"
+                          className="group relative cursor-pointer"
+                          title="Klik untuk memperbesar bukti foto"
                         >
                           <img
-                            src={att.clock_in_photo_url || ''}
-                            alt="Selfie"
-                            className="w-10 h-10 rounded-full object-cover border-2 border-slate-200 group-hover:border-blue-500 group-hover:scale-105 transition-all shadow-sm"
+                            src={
+                              att.clock_in_photo_url ||
+                              'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80'
+                            }
+                            alt="Selfie Bukti"
+                            className="w-10 h-10 rounded-full object-cover border border-zinc-700 group-hover:scale-105 transition-all"
                           />
                           <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
                             <ZoomIn className="w-4 h-4" />
@@ -470,31 +469,34 @@ export default function AttendancePage() {
                         </div>
 
                         <div>
-                          <p className="font-semibold text-slate-900">{att.profile?.full_name || 'Teknisi'}</p>
-                          <p className="text-[10px] text-slate-500 font-mono">{att.profile?.employee_id || 'EMP-TEC'}</p>
+                          <div className="font-semibold text-white">
+                            {att.profile?.full_name || 'Teknisi Lapangan'}
+                          </div>
+                          <div className="text-[10px] text-zinc-400 font-mono">
+                            {att.profile?.employee_id || 'EMP-TEC'}
+                          </div>
                         </div>
                       </div>
                     </td>
-                    <td className="p-3 font-medium text-slate-700">{formatDate(att.date)}</td>
-                    <td className="p-3 text-slate-600 font-mono">{formatDateTime(att.clock_in_time)}</td>
+                    <td className="p-3 text-zinc-300 font-medium">{formatDate(att.date)}</td>
+                    <td className="p-3 text-zinc-300 font-mono">{formatDateTime(att.clock_in_time)}</td>
                     <td className="p-3">
-                      <Badge
-                        variant={att.status === 'present' ? 'success' : 'warning'}
-                        className="capitalize text-[10px]"
-                      >
+                      <Badge variant="outline" className="text-[10px] capitalize bg-emerald-950/60 text-emerald-400 border-emerald-800/60">
                         {att.status.replace('_', ' ')}
                       </Badge>
                     </td>
-                    <td className="p-3 text-slate-600">
-                      <p className="truncate max-w-[200px]">{att.clock_in_address || '-'}</p>
-                      <span className="text-[10px] text-emerald-600 font-medium">
+                    <td className="p-3">
+                      <div className="text-zinc-200">{att.clock_in_address || 'Kantor Pusat'}</div>
+                      <div className="text-[10px] text-zinc-400 font-mono">
                         {att.clock_in_distance_meters || 15}m dari titik pusat
-                      </span>
+                      </div>
                     </td>
-                    <td className="p-3 text-slate-500 max-w-[200px] truncate">{att.notes || '-'}</td>
+                    <td className="p-3 max-w-[200px] truncate text-zinc-400">
+                      {att.notes || '-'}
+                    </td>
                     <td className="p-3 text-right">
-                      <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-300">
-                        {att.verification_status}
+                      <Badge variant="outline" className="text-[10px] bg-zinc-800 text-emerald-400 border-zinc-700">
+                        {att.verification_status || 'approved'}
                       </Badge>
                     </td>
                   </tr>
@@ -505,91 +507,74 @@ export default function AttendancePage() {
         </CardContent>
       </Card>
 
-      {/* Lightbox Modal: Detail Foto Bukti Presensi */}
+      {/* Lightbox Modal for Viewing Photo & Geotag Proof */}
       {activePhoto && (
-        <div
-          onClick={() => setActivePhoto(null)}
-          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 transition-opacity"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-slate-300 overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200"
-          >
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
+          <div className="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[95vh]">
             {/* Modal Header */}
-            <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+            <div className="p-4 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <CalendarCheck2 className="w-5 h-5 text-blue-600" />
+                <ShieldCheck className="w-5 h-5 text-emerald-400" />
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Detail Bukti Presensi Selfie</h3>
-                  <p className="text-[11px] text-slate-500">{activePhoto.name} ({activePhoto.employeeId})</p>
+                  <h3 className="text-sm font-bold text-white">
+                    Bukti Presensi Geofencing & Selfie
+                  </h3>
+                  <p className="text-[11px] text-zinc-400">
+                    Otentikasi K3 PT Telekomunikasi Indonesia
+                  </p>
                 </div>
               </div>
               <button
                 onClick={() => setActivePhoto(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors"
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Photo Container */}
-            <div className="p-4 bg-slate-900 flex items-center justify-center relative overflow-hidden">
-              <img
-                src={activePhoto.url}
-                alt="Bukti Presensi"
-                className="max-h-[50vh] w-auto max-w-full rounded-xl object-contain shadow-2xl border border-white/10"
-              />
-            </div>
-
-            {/* Metadata Footer */}
-            <div className="p-4 space-y-3 bg-white overflow-y-auto">
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 space-y-0.5">
-                  <span className="text-[10px] text-slate-400 font-semibold uppercase block flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-amber-500" /> Waktu Presensi
-                  </span>
-                  <span className="font-semibold text-slate-800">{activePhoto.time || activePhoto.date}</span>
-                </div>
-                <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 space-y-0.5">
-                  <span className="text-[10px] text-slate-400 font-semibold uppercase block flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3 text-emerald-500" /> Status & Geofence
-                  </span>
-                  <span className="font-semibold text-slate-800 capitalize">
-                    {activePhoto.status.replace('_', ' ')} • {activePhoto.distance || 15}m
-                  </span>
-                </div>
+            {/* Modal Image Display */}
+            <div className="p-4 sm:p-6 bg-zinc-950 flex flex-col items-center justify-center overflow-y-auto">
+              <div className="relative rounded-xl overflow-hidden border border-zinc-800 shadow-xl max-w-full">
+                <img
+                  src={activePhoto.url}
+                  alt="Bukti Kehadiran Penuh"
+                  className="max-h-[50vh] sm:max-h-[55vh] w-auto object-contain"
+                />
               </div>
 
-              <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs space-y-1">
-                <span className="text-[10px] text-slate-400 font-semibold uppercase block flex items-center gap-1">
-                  <MapPin className="w-3 h-3 text-red-500" /> Lokasi Site Lapangan
-                </span>
-                <p className="font-medium text-slate-800">{activePhoto.address}</p>
+              {/* Detail Info Card */}
+              <div className="w-full mt-4 p-4 rounded-xl bg-zinc-900 border border-zinc-800 text-xs space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-zinc-300">
+                  <div className="flex items-center gap-2">
+                    <User className="w-3.5 h-3.5 text-blue-400" />
+                    <span>
+                      <strong>Nama:</strong> {activePhoto.name} ({activePhoto.employeeId})
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5 text-blue-400" />
+                    <span>
+                      <strong>Waktu:</strong> {activePhoto.time || activePhoto.date}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>
+                      <strong>Lokasi:</strong> {activePhoto.address}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>
+                      <strong>Status / Jarak:</strong> {activePhoto.status} ({activePhoto.distance}m)
+                    </span>
+                  </div>
+                </div>
                 {activePhoto.notes && (
-                  <p className="text-[11px] text-slate-500 pt-1 border-t border-slate-200">
-                    Catatan: &ldquo;{activePhoto.notes}&rdquo;
-                  </p>
+                  <div className="pt-2 border-t border-zinc-800 text-zinc-400">
+                    <strong>Catatan Kerja:</strong> {activePhoto.notes}
+                  </div>
                 )}
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-2 pt-1">
-                <a
-                  href={activePhoto.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  Buka Tab Penuh
-                </a>
-                <Button
-                  onClick={() => setActivePhoto(null)}
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4"
-                >
-                  Tutup
-                </Button>
               </div>
             </div>
           </div>

@@ -15,13 +15,6 @@ import {
   Truck,
   Radio,
   X,
-  LogOut,
-  PanelLeftClose,
-  Shield,
-  Briefcase,
-  Users,
-  Coins,
-  HardHat,
 } from 'lucide-react';
 import { DEMO_PROFILES } from '@/lib/mock-data';
 
@@ -79,13 +72,13 @@ const NAV_ITEMS: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { role, user, mobileMenuOpen, setMobileMenuOpen, sidebarCollapsed, toggleSidebar, logout } = useAuth();
+  const { role, mobileMenuOpen, setMobileMenuOpen, sidebarCollapsed } = useAuth();
 
   const filteredNav = NAV_ITEMS.filter((item) => item.allowedRoles.includes(role));
 
   const content = (
     <div className="flex h-full flex-col bg-zinc-950 text-zinc-100 select-none">
-      {/* Brand logo & header */}
+      {/* Brand logo & header - Clean single logo, no duplicate collapse button */}
       <div className="h-16 flex items-center justify-between px-5 border-b border-zinc-800/80">
         <Link href="/dashboard" className="flex items-center gap-3 group">
           <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-700/80 flex items-center justify-center text-white shadow-sm group-hover:border-zinc-500 transition-colors shrink-0">
@@ -102,22 +95,13 @@ export function Sidebar() {
           </div>
         </Link>
 
-        {/* Mobile close button */}
+        {/* Mobile close button only */}
         <button
           onClick={() => setMobileMenuOpen(false)}
           className="lg:hidden p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
           aria-label="Tutup menu"
         >
           <X className="w-5 h-5" />
-        </button>
-
-        {/* Desktop collapse toggle shortcut */}
-        <button
-          onClick={toggleSidebar}
-          className="hidden lg:flex p-1 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900 transition-colors"
-          title="Tutup sidebar"
-        >
-          <PanelLeftClose className="w-4 h-4" />
         </button>
       </div>
 
@@ -167,7 +151,7 @@ export function Sidebar() {
         })}
 
         {/* Your team section matching 21st.dev ShadcnStore layout */}
-        <div className="pt-6 pb-2">
+        <div className="pt-6 pb-4">
           <div className="px-2.5 pb-2 text-[11px] font-medium text-zinc-500 tracking-wide flex items-center justify-between">
             <span>Your team</span>
             <span className="text-[10px] bg-zinc-900 px-1.5 py-0.2 rounded border border-zinc-800 text-zinc-400">
@@ -196,30 +180,6 @@ export function Sidebar() {
               </div>
             ))}
           </div>
-        </div>
-      </div>
-
-      {/* User footer info matching 21st.dev style */}
-      <div className="p-3 border-t border-zinc-800/80 bg-zinc-950">
-        <div className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-xl hover:bg-zinc-900/70 transition-colors">
-          <div className="flex items-center gap-2.5 min-w-0 flex-1">
-            <img
-              src={user?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
-              alt="Avatar"
-              className="w-8 h-8 rounded-full object-cover border border-zinc-700/80 shrink-0"
-            />
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-white truncate">{user?.full_name || 'Bambang Sudibyo'}</p>
-              <p className="text-[11px] text-zinc-400 truncate">{user?.email || 'admin@telekomunikasi.co.id'}</p>
-            </div>
-          </div>
-          <button
-            onClick={logout}
-            className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-zinc-800 rounded-lg transition-colors"
-            title="Keluar"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
         </div>
       </div>
     </div>

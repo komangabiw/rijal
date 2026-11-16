@@ -16,14 +16,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2 } from "lucide-react";
+import { Loader2, Radio, Server, Wifi, Network, ShieldCheck, MapPin, Truck } from "lucide-react";
 
 // Validation schema for the form
 const formSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email." }),
+  email: z.string().email({ message: "Masukkan email yang valid." }),
   password: z
     .string()
-    .min(8, { message: "Password must be at least 8 characters." }),
+    .min(6, { message: "Kata sandi minimal 6 karakter." }),
   rememberMe: z.boolean().default(false).optional(),
 });
 
@@ -33,31 +33,16 @@ interface AuthFormSplitScreenProps {
   logo: React.ReactNode;
   title: string;
   description: string;
-  imageSrc: string;
-  imageAlt: string;
   onSubmit: (data: FormValues) => Promise<void>;
   forgotPasswordHref: string;
   createAccountHref: string;
   extraContent?: React.ReactNode;
 }
 
-/**
- * A responsive, split-screen authentication form component.
- * @param logo - The component to be used as the logo (e.g., an SVG or text).
- * @param title - The main heading for the form.
- * @param description - A short description below the title.
- * @param imageSrc - URL for the image to display on the right panel.
- * @param imageAlt - Alt text for the image for accessibility.
- * @param onSubmit - Async function to handle form submission.
- * @param forgotPasswordHref - URL for the "Forgot Password" link.
- * @param createAccountHref - URL for the "Create Account" link.
- */
 export function AuthFormSplitScreen({
   logo,
   title,
   description,
-  imageSrc,
-  imageAlt,
   onSubmit,
   forgotPasswordHref,
   createAccountHref,
@@ -85,45 +70,45 @@ export function AuthFormSplitScreen({
     }
   };
 
-  // Animation variants for staggering children
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1,
+        staggerChildren: 0.08,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
+    hidden: { y: 15, opacity: 0 },
     visible: { y: 0, opacity: 1 },
   };
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col md:flex-row bg-slate-950 text-slate-100">
-      {/* Left Panel: Form */}
-      <div className="flex w-full flex-col items-center justify-center p-6 sm:p-10 md:w-1/2 lg:w-5/12 bg-slate-900/90 border-r border-slate-800">
-        <div className="w-full max-w-md">
+    <div className="relative flex h-screen w-full flex-col md:flex-row bg-zinc-950 text-zinc-100 overflow-hidden select-none">
+      {/* Left Panel: Compact Form designed to fit 1 screen without scrolling */}
+      <div className="flex w-full flex-col justify-center px-6 sm:px-10 lg:px-12 py-6 md:w-1/2 lg:w-5/12 bg-zinc-900/90 border-r border-zinc-800/80 h-full overflow-y-auto scrollbar-none">
+        <div className="w-full max-w-sm mx-auto my-auto space-y-4">
           <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="flex flex-col gap-5"
+            className="flex flex-col gap-3.5"
           >
-            <motion.div variants={itemVariants} className="mb-1">
+            <motion.div variants={itemVariants}>
               {logo}
             </motion.div>
+
             <motion.div variants={itemVariants} className="text-left">
-              <h1 className="text-2xl font-bold tracking-tight text-white">{title}</h1>
-              <p className="text-xs text-slate-400 mt-1">{description}</p>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">{title}</h1>
+              <p className="text-xs text-zinc-400 mt-0.5">{description}</p>
             </motion.div>
 
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(handleFormSubmit)}
-                className="space-y-4"
+                className="space-y-3"
               >
                 <motion.div variants={itemVariants}>
                   <FormField
@@ -131,16 +116,16 @@ export function AuthFormSplitScreen({
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs text-slate-300">Email Perusahaan</FormLabel>
+                        <FormLabel className="text-xs text-zinc-300">Email Perusahaan</FormLabel>
                         <FormControl>
                           <Input
                             placeholder="admin@telekomunikasi.co.id"
                             {...field}
                             disabled={isLoading}
-                            className="bg-slate-800/80 border-slate-700 text-white placeholder:text-slate-500 text-xs focus-visible:ring-blue-500"
+                            className="h-9 bg-zinc-800/90 border-zinc-700 text-white placeholder:text-zinc-500 text-xs focus-visible:ring-blue-500"
                           />
                         </FormControl>
-                        <FormMessage className="text-xs text-red-400" />
+                        <FormMessage className="text-[10px]" />
                       </FormItem>
                     )}
                   />
@@ -152,17 +137,17 @@ export function AuthFormSplitScreen({
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs text-slate-300">Kata Sandi</FormLabel>
+                        <FormLabel className="text-xs text-zinc-300">Kata Sandi</FormLabel>
                         <FormControl>
                           <Input
                             type="password"
                             placeholder="••••••••••••"
                             {...field}
                             disabled={isLoading}
-                            className="bg-slate-800/80 border-slate-700 text-white placeholder:text-slate-500 text-xs focus-visible:ring-blue-500"
+                            className="h-9 bg-zinc-800/90 border-zinc-700 text-white placeholder:text-zinc-500 text-xs focus-visible:ring-blue-500"
                           />
                         </FormControl>
-                        <FormMessage className="text-xs text-red-400" />
+                        <FormMessage className="text-[10px]" />
                       </FormItem>
                     )}
                   />
@@ -170,23 +155,23 @@ export function AuthFormSplitScreen({
 
                 <motion.div
                   variants={itemVariants}
-                  className="flex items-center justify-between"
+                  className="flex items-center justify-between pt-0.5"
                 >
                   <FormField
                     control={form.control}
                     name="rememberMe"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                      <FormItem className="flex items-center space-x-2 space-y-0">
                         <FormControl>
                           <Checkbox
                             checked={field.value}
                             onCheckedChange={field.onChange}
                             disabled={isLoading}
-                            className="border-slate-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                            className="border-zinc-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                           />
                         </FormControl>
                         <div className="leading-none">
-                          <FormLabel className="font-normal text-xs text-slate-400 cursor-pointer">
+                          <FormLabel className="text-xs font-normal text-zinc-400 cursor-pointer">
                             Ingat Saya
                           </FormLabel>
                         </div>
@@ -201,14 +186,14 @@ export function AuthFormSplitScreen({
                   </a>
                 </motion.div>
 
-                <motion.div variants={itemVariants}>
+                <motion.div variants={itemVariants} className="pt-1">
                   <Button
                     type="submit"
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs py-2.5 shadow-lg shadow-blue-600/30"
+                    className="w-full h-9 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-md shadow-blue-600/30 transition-all active:scale-[0.98]"
                     disabled={isLoading}
                   >
                     {isLoading && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                     )}
                     Masuk ke Dashboard Portal
                   </Button>
@@ -217,14 +202,14 @@ export function AuthFormSplitScreen({
             </Form>
 
             {extraContent && (
-              <motion.div variants={itemVariants} className="pt-2">
+              <motion.div variants={itemVariants} className="pt-1">
                 {extraContent}
               </motion.div>
             )}
 
             <motion.p
               variants={itemVariants}
-              className="text-center text-xs text-slate-500"
+              className="text-center text-[11px] text-zinc-500 pt-0.5"
             >
               Belum memiliki akun resmi?{" "}
               <a
@@ -239,24 +224,111 @@ export function AuthFormSplitScreen({
         </div>
       </div>
 
-      {/* Right Panel: Image with Telecom theme */}
-      <div className="relative hidden w-full md:block md:w-1/2 lg:w-7/12 overflow-hidden bg-slate-950">
-        <img
-          src={imageSrc}
-          alt={imageAlt}
-          className="h-full w-full object-cover opacity-85 scale-105 hover:scale-100 transition-transform duration-1000"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
-        
-        {/* Ambient overlay info */}
-        <div className="absolute bottom-8 left-8 right-8 text-white space-y-2 z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-semibold backdrop-blur-md">
-            <span>Telecommunication Infrastructure Backbone</span>
+      {/* Right Panel: Pure Telecommunications Technology Icons & Infrastructure Visualizer */}
+      <div className="relative hidden w-full md:flex md:w-1/2 lg:w-7/12 flex-col justify-between p-8 lg:p-12 overflow-hidden bg-zinc-950">
+        {/* Futuristic glowing cyber grid background */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(37,99,235,0.25),rgba(255,255,255,0))]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#18181b_1px,transparent_1px),linear-gradient(to_bottom,#18181b_1px,transparent_1px)] bg-[size:3.5rem_3.5rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-60" />
+
+        {/* Top Badges */}
+        <div className="relative z-10 flex items-center justify-between">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-semibold backdrop-blur-md">
+            <Radio className="w-3.5 h-3.5 animate-pulse" />
+            <span>Telecommunication Infrastructure System</span>
           </div>
-          <h2 className="text-2xl font-bold tracking-tight">PT Telekomunikasi Indonesia</h2>
-          <p className="text-xs text-slate-300 max-w-lg">
-            Sistem ERP dan Operasional Terpadu: Monitoring Penggelaran Fiber Optik ADSS, Menara BTS Macro 5G, Geofencing Presensi, & Distribusi Material Logistik.
-          </p>
+          <div className="text-[11px] text-zinc-500 font-mono">
+            PT TELEKOMUNIKASI • EDGE v2026
+          </div>
+        </div>
+
+        {/* Center: Interactive Telecom Hardware Architecture Grid */}
+        <div className="relative z-10 grid grid-cols-2 lg:grid-cols-3 gap-3.5 my-auto max-w-xl mx-auto w-full">
+          {/* Card 1: Menara BTS 5G */}
+          <div className="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800 hover:border-blue-500/60 transition-all duration-300 group shadow-lg backdrop-blur-md">
+            <div className="w-10 h-10 rounded-xl bg-blue-950/80 border border-blue-700/50 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+              <Wifi className="w-5 h-5" />
+            </div>
+            <h3 className="text-xs font-bold text-white mt-3 group-hover:text-blue-400 transition-colors">
+              Menara BTS & Macro 5G
+            </h3>
+            <p className="text-[11px] text-zinc-400 mt-1 leading-snug">
+              Instalasi BBU/RRU, radio microwave & aktivasi site seluler.
+            </p>
+          </div>
+
+          {/* Card 2: Backbone Fiber Optic */}
+          <div className="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800 hover:border-emerald-500/60 transition-all duration-300 group shadow-lg backdrop-blur-md">
+            <div className="w-10 h-10 rounded-xl bg-emerald-950/80 border border-emerald-700/50 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+              <Network className="w-5 h-5" />
+            </div>
+            <h3 className="text-xs font-bold text-white mt-3 group-hover:text-emerald-400 transition-colors">
+              Backbone Fiber Optic
+            </h3>
+            <p className="text-[11px] text-zinc-400 mt-1 leading-snug">
+              Kabel ADSS 24C/48C/96C jalur udara & duct bawah tanah.
+            </p>
+          </div>
+
+          {/* Card 3: Distribution ODC & ODP */}
+          <div className="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800 hover:border-amber-500/60 transition-all duration-300 group shadow-lg backdrop-blur-md">
+            <div className="w-10 h-10 rounded-xl bg-amber-950/80 border border-amber-700/50 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+              <Server className="w-5 h-5" />
+            </div>
+            <h3 className="text-xs font-bold text-white mt-3 group-hover:text-amber-400 transition-colors">
+              ODC & ODP Enclosures
+            </h3>
+            <p className="text-[11px] text-zinc-400 mt-1 leading-snug">
+              Optical cabinet 144 core, closure dome & splitter solid 16P.
+            </p>
+          </div>
+
+          {/* Card 4: GPS Geofencing Telemetry */}
+          <div className="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800 hover:border-cyan-500/60 transition-all duration-300 group shadow-lg backdrop-blur-md">
+            <div className="w-10 h-10 rounded-xl bg-cyan-950/80 border border-cyan-700/50 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform">
+              <MapPin className="w-5 h-5" />
+            </div>
+            <h3 className="text-xs font-bold text-white mt-3 group-hover:text-cyan-400 transition-colors">
+              GPS Geofencing Presensi
+            </h3>
+            <p className="text-[11px] text-zinc-400 mt-1 leading-snug">
+              Validasi jarak radius kerja kantor & bukti selfie kamera live.
+            </p>
+          </div>
+
+          {/* Card 5: Fleet & Logistik Surat Jalan */}
+          <div className="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800 hover:border-purple-500/60 transition-all duration-300 group shadow-lg backdrop-blur-md">
+            <div className="w-10 h-10 rounded-xl bg-purple-950/80 border border-purple-700/50 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+              <Truck className="w-5 h-5" />
+            </div>
+            <h3 className="text-xs font-bold text-white mt-3 group-hover:text-purple-400 transition-colors">
+              Logistik & Surat Jalan
+            </h3>
+            <p className="text-[11px] text-zinc-400 mt-1 leading-snug">
+              Tracking armada, alokasi material gudang & konfirmasi POD.
+            </p>
+          </div>
+
+          {/* Card 6: Enterprise Security */}
+          <div className="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800 hover:border-rose-500/60 transition-all duration-300 group shadow-lg backdrop-blur-md">
+            <div className="w-10 h-10 rounded-xl bg-rose-950/80 border border-rose-700/50 flex items-center justify-center text-rose-400 group-hover:scale-110 transition-transform">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <h3 className="text-xs font-bold text-white mt-3 group-hover:text-rose-400 transition-colors">
+              RLS & Data Security
+            </h3>
+            <p className="text-[11px] text-zinc-400 mt-1 leading-snug">
+              Enkripsi database PostgreSQL, audit trail & role berbasis RLS.
+            </p>
+          </div>
+        </div>
+
+        {/* Bottom Status bar */}
+        <div className="relative z-10 flex items-center justify-between text-xs text-zinc-400 border-t border-zinc-800/80 pt-4">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span className="text-zinc-300 font-medium">99.98% Network SLA Uptime</span>
+          </div>
+          <span>Cloudflare Edge • Supabase PostgreSQL</span>
         </div>
       </div>
     </div>

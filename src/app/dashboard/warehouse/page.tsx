@@ -18,11 +18,11 @@ import {
   Search,
   X,
   Warehouse as WarehouseIcon,
-  RefreshCw,
+  RotateCw,
 } from 'lucide-react';
 
 export default function WarehousePage() {
-  const { user, role } = useAuth();
+  const { user } = useAuth();
   const [stocks, setStocks] = useState<WarehouseStock[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -36,17 +36,17 @@ export default function WarehousePage() {
   const [inboundRef, setInboundRef] = useState('PO-2026-SUPP-044');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const loadStocks = async () => {
+    setIsLoading(true);
+    const data = await fetchStocks();
+    setStocks(data || []);
+    setIsLoading(false);
+  };
+
   useEffect(() => {
-    async function loadStocks() {
-      setIsLoading(true);
-      const data = await fetchStocks();
-      setStocks(data);
-      setIsLoading(false);
-    }
     loadStocks();
   }, []);
 
-  // Filter stocks
   const filteredStocks = stocks.filter((s) => {
     const matchSearch =
       (s.item?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -71,7 +71,6 @@ export default function WarehousePage() {
         receivedBy: user?.id || 'a0000000-0000-0000-0000-000000000005',
       });
 
-      // Update local state
       setStocks((prev) => {
         const index = prev.findIndex((s) => s.item_id === selectedItemId && s.warehouse_id === selectedWarehouseId);
         if (index >= 0) {
@@ -97,232 +96,222 @@ export default function WarehousePage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Page Title & Action */}
+    <div className="space-y-6 text-zinc-100">
+      {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            <Boxes className="w-6 h-6 text-cyan-600" />
-            Warehouse & Material Management
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+            <Boxes className="w-5 h-5 text-cyan-400" />
+            Warehouse & Manajemen Inventori Material
           </h1>
-          <p className="text-xs text-slate-500">
-            Katalog material telekomunikasi, stok multi-gudang (Bekasi & Jakarta), dan peringatan dini stok menipis.
+          <p className="text-xs text-zinc-400 mt-0.5">
+            Monitoring stok kabel fiber optik, perangkat aktif ODC/ODP, minimum alert, dan pencatatan barang masuk (Inbound).
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200">
-            <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-600" />
-            Supabase DB Terhubung
-          </Badge>
+          <Button
+            onClick={loadStocks}
+            variant="outline"
+            size="sm"
+            className="text-xs bg-zinc-900 border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800"
+          >
+            <RotateCw className="w-3.5 h-3.5 mr-1" />
+            Refresh
+          </Button>
           <Button
             onClick={() => setShowInboundModal(true)}
-            className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-semibold shadow"
+            className="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold shadow-md shadow-cyan-600/30"
           >
             <PackagePlus className="w-4 h-4 mr-1.5" />
-            Penerimaan Barang Masuk (PO / Supplier)
+            Catat Barang Masuk (Inbound)
           </Button>
         </div>
       </div>
 
-      {/* KPI Warehouse Overview */}
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card>
+        <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-medium text-slate-500 uppercase">
-              Total SKU Material
+            <CardTitle className="text-xs font-medium text-zinc-400 uppercase tracking-wide">
+              Total Item Katalog
             </CardTitle>
-            <Layers className="w-4 h-4 text-cyan-600" />
+            <Layers className="w-4 h-4 text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-900">{stocks.length || DEMO_ITEMS.length} Katalog</div>
-            <p className="text-xs text-slate-500 mt-1">Kabel FO, ODP, ODC, SFP+, Fusion Splicer</p>
+            <div className="text-2xl font-bold text-white">{DEMO_ITEMS.length} SKU</div>
+            <p className="text-xs text-blue-400 font-medium mt-1">Material FO & Aksesoris Tiang</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-medium text-slate-500 uppercase">
-              Gudang & Hub Aktif
+            <CardTitle className="text-xs font-medium text-zinc-400 uppercase tracking-wide">
+              Stok Kritis / Di Bawah Batas
             </CardTitle>
-            <WarehouseIcon className="w-4 h-4 text-blue-600" />
+            <AlertTriangle className="w-4 h-4 text-rose-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-900">{DEMO_WAREHOUSES.length} Lokasi</div>
-            <p className="text-xs text-blue-600 font-medium mt-1">Central Cikarang MM2100 & Rawamangun Hub</p>
+            <div className="text-2xl font-bold text-rose-400">{lowStockCount} Item</div>
+            <p className="text-xs text-rose-400 font-medium mt-1">Perlu Restock Segera</p>
           </CardContent>
         </Card>
 
-        <Card className={lowStockCount > 0 ? 'border-red-300 bg-red-50/20' : ''}>
+        <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-medium text-slate-500 uppercase">
-              Peringatan Stok Minimum
+            <CardTitle className="text-xs font-medium text-zinc-400 uppercase tracking-wide">
+              Gudang & Hub Operasional
             </CardTitle>
-            <AlertTriangle className={`w-4 h-4 ${lowStockCount > 0 ? 'text-red-600' : 'text-slate-400'}`} />
+            <WarehouseIcon className="w-4 h-4 text-emerald-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{lowStockCount} Item Menipis</div>
-            <p className="text-xs text-red-700 font-medium mt-1">Perlu reorder sebelum menghambat implementasi</p>
+            <div className="text-2xl font-bold text-white">{DEMO_WAREHOUSES.length} Lokasi</div>
+            <p className="text-xs text-emerald-400 font-medium mt-1">Central Cikarang & Rawamangun</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search & Warehouse Filter */}
-      <div className="flex flex-col sm:flex-row items-center gap-3">
-        <div className="relative flex-1 w-full">
-          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari SKU atau nama material (misal: CAB-FO, ODP, SFP)..."
-            className="pl-9 text-xs"
-          />
-        </div>
-        <select
-          value={selectedWarehouse}
-          onChange={(e) => setSelectedWarehouse(e.target.value)}
-          className="w-full sm:w-auto text-xs bg-white border border-slate-300 rounded-md p-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-cyan-600"
-        >
-          <option value="all">Semua Gudang</option>
-          {DEMO_WAREHOUSES.map((wh) => (
-            <option key={wh.id} value={wh.id}>
-              {wh.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* Stocks Table with Search & Filter */}
+      <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl">
+        <CardHeader className="pb-3 border-b border-zinc-800/80">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <CardTitle className="text-sm font-bold text-white">
+                Daftar Inventori Material Telekomunikasi
+              </CardTitle>
+              <CardDescription className="text-xs text-zinc-400">
+                Peringatan stok minimum diverifikasi otomatis oleh database
+              </CardDescription>
+            </div>
 
-      {/* Stock Table */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-bold text-slate-900 flex items-center justify-between">
-            <span>Status Ketersediaan Material Real-Time</span>
-            <Badge variant="outline" className="text-xs">
-              {filteredStocks.length} Record
-            </Badge>
-          </CardTitle>
-          <CardDescription className="text-xs text-slate-500">
-            Jumlah fisik gudang, alokasi reservasi proyek, dan status ambang batas peringatan
-          </CardDescription>
+            <div className="flex items-center gap-2">
+              <div className="relative w-48 sm:w-64">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-zinc-500" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Cari SKU atau nama item..."
+                  className="pl-8 text-xs h-8 bg-zinc-800/90 border-zinc-700 text-white placeholder:text-zinc-500"
+                />
+              </div>
+
+              <select
+                value={selectedWarehouse}
+                onChange={(e) => setSelectedWarehouse(e.target.value)}
+                className="text-xs bg-zinc-800 border border-zinc-700 text-white rounded-lg p-1.5 focus:outline-none"
+              >
+                <option value="all">Semua Gudang</option>
+                {DEMO_WAREHOUSES.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.code}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="p-8 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
-              <RefreshCw className="w-4 h-4 animate-spin text-cyan-600" />
-              Memuat data stok gudang...
-            </div>
-          ) : (
-            <div className="overflow-x-auto rounded-lg border border-slate-200">
-              <table className="w-full text-left text-xs min-w-[700px]">
-                <thead className="bg-slate-50 text-slate-600 uppercase font-semibold border-b border-slate-200">
-                  <tr>
-                    <th className="p-3">SKU & Kategori</th>
-                    <th className="p-3">Nama Material</th>
-                    <th className="p-3">Gudang</th>
-                    <th className="p-3">Stok Fisik</th>
-                    <th className="p-3">Reservasi Proyek</th>
-                    <th className="p-3">Min Alert</th>
-                    <th className="p-3 text-right">Status Ketersediaan</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 bg-white">
-                  {filteredStocks.map((stock) => {
-                    const isLow = Number(stock.quantity) <= Number(stock.item?.min_stock_alert || 0);
-                    return (
-                      <tr key={stock.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="p-3">
-                          <span className="font-mono font-bold text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded text-[11px]">
-                            {stock.item?.sku || 'SKU-ITEM'}
-                          </span>
-                          <span className="block text-[10px] uppercase text-cyan-700 mt-1 font-semibold">
-                            {stock.item?.category?.replace(/_/g, ' ') || 'MATERIAL'}
-                          </span>
-                        </td>
-                        <td className="p-3">
-                          <p className="font-semibold text-slate-900">{stock.item?.name || 'Item Material'}</p>
-                          <p className="text-[10px] text-slate-400 font-mono">
-                            Satuan: {stock.item?.uom || 'Unit'}
-                          </p>
-                        </td>
-                        <td className="p-3 text-slate-700 font-medium">
-                          {stock.warehouse?.name?.replace('Central Warehouse ', '') || 'Central Cikarang'}
-                        </td>
-                        <td className="p-3 font-mono font-bold text-slate-900 text-sm">
-                          {Number(stock.quantity).toLocaleString('id-ID')} {stock.item?.uom || ''}
-                        </td>
-                        <td className="p-3 font-mono text-slate-500">
-                          {Number(stock.reserved_quantity || 0).toLocaleString('id-ID')} {stock.item?.uom || ''}
-                        </td>
-                        <td className="p-3 font-mono text-slate-400">
-                          {Number(stock.item?.min_stock_alert || 0).toLocaleString('id-ID')}
-                        </td>
-                        <td className="p-3 text-right">
-                          {isLow ? (
-                            <Badge variant="destructive" className="text-[10px] inline-flex items-center gap-1">
-                              <AlertTriangle className="w-3 h-3" />
-                              Stok Menipis (Low)
-                            </Badge>
-                          ) : (
-                            <Badge variant="success" className="text-[10px]">
-                              Aman (Normal)
-                            </Badge>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+        <CardContent className="p-4">
+          <div className="overflow-x-auto rounded-xl border border-zinc-800 -mx-2 sm:mx-0">
+            <table className="w-full text-left text-xs min-w-[680px]">
+              <thead className="bg-zinc-950/80 text-zinc-400 uppercase font-semibold border-b border-zinc-800">
+                <tr>
+                  <th className="p-3">SKU & Nama Material</th>
+                  <th className="p-3">Gudang</th>
+                  <th className="p-3">Kategori</th>
+                  <th className="p-3 text-right">Tersedia</th>
+                  <th className="p-3 text-right">Min Alert</th>
+                  <th className="p-3 text-center">Status Stok</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-800/80 bg-zinc-900">
+                {filteredStocks.map((stock) => {
+                  const isLow = Number(stock.quantity) <= Number(stock.item?.min_stock_alert || 0);
+                  return (
+                    <tr key={stock.id} className="hover:bg-zinc-800/50 transition-colors">
+                      <td className="p-3">
+                        <div className="font-semibold text-white">{stock.item?.name}</div>
+                        <div className="text-[10px] text-zinc-400 font-mono">{stock.item?.sku}</div>
+                      </td>
+                      <td className="p-3 text-zinc-300 font-mono">{stock.warehouse?.code || 'WH-CKR'}</td>
+                      <td className="p-3">
+                        <Badge variant="outline" className="text-[10px] capitalize bg-zinc-800 border-zinc-700 text-zinc-300">
+                          {stock.item?.category.replace(/_/g, ' ')}
+                        </Badge>
+                      </td>
+                      <td className="p-3 text-right font-bold text-white">
+                        {Number(stock.quantity).toLocaleString('id-ID')} {stock.item?.uom}
+                      </td>
+                      <td className="p-3 text-right text-zinc-400 font-mono">
+                        {Number(stock.item?.min_stock_alert || 0).toLocaleString('id-ID')}
+                      </td>
+                      <td className="p-3 text-center">
+                        {isLow ? (
+                          <Badge variant="outline" className="bg-rose-950/60 text-rose-400 border-rose-800/60 text-[10px]">
+                            Stok Menipis
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-emerald-950/60 text-emerald-400 border-emerald-800/60 text-[10px]">
+                            Aman
+                          </Badge>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </CardContent>
       </Card>
 
       {/* Inbound Stock Modal */}
       {showInboundModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-          <Card className="w-full max-w-lg bg-white shadow-2xl rounded-2xl border-slate-300 overflow-hidden max-h-[92vh] flex flex-col">
-            <CardHeader className="bg-slate-50 border-b border-slate-200 pb-3 shrink-0">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+          <Card className="w-full max-w-lg bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
+            <CardHeader className="bg-zinc-950 border-b border-zinc-800 pb-3 shrink-0">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <PackagePlus className="w-4 h-4 text-cyan-600" />
-                  Penerimaan Barang Masuk (Inbound Goods Receipt)
+                <CardTitle className="text-base font-bold text-white flex items-center gap-2">
+                  <PackagePlus className="w-4 h-4 text-cyan-400" />
+                  Penerimaan Barang Masuk (Inbound)
                 </CardTitle>
                 <button
                   onClick={() => setShowInboundModal(false)}
-                  className="p-1 rounded-md text-slate-400 hover:text-slate-700"
+                  className="p-1 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
+              <CardDescription className="text-xs text-zinc-400">
+                Pencatatan material FO/BTS dari supplier ke gudang penyimpanan
+              </CardDescription>
             </CardHeader>
             <CardContent className="p-4 sm:p-5 space-y-4 overflow-y-auto">
-              <form onSubmit={handleInboundStock} className="space-y-4">
+              <form onSubmit={handleInboundStock} className="space-y-3.5">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700">Pilih Material</label>
+                  <label className="text-xs font-semibold text-zinc-300">Pilih Material</label>
                   <select
                     value={selectedItemId}
                     onChange={(e) => setSelectedItemId(e.target.value)}
-                    className="w-full text-xs bg-white border border-slate-300 rounded-md p-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-cyan-600"
+                    className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
                   >
-                    {DEMO_ITEMS.map((itm) => (
-                      <option key={itm.id} value={itm.id}>
-                        {itm.sku} - {itm.name} ({itm.uom})
+                    {DEMO_ITEMS.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.sku} - {item.name}
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700">Gudang Tujuan</label>
+                  <label className="text-xs font-semibold text-zinc-300">Pilih Gudang Tujuan</label>
                   <select
                     value={selectedWarehouseId}
                     onChange={(e) => setSelectedWarehouseId(e.target.value)}
-                    className="w-full text-xs bg-white border border-slate-300 rounded-md p-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-cyan-600"
+                    className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
                   >
-                    {DEMO_WAREHOUSES.map((wh) => (
-                      <option key={wh.id} value={wh.id}>
-                        {wh.name}
+                    {DEMO_WAREHOUSES.map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {w.code} - {w.name}
                       </option>
                     ))}
                   </select>
@@ -330,42 +319,35 @@ export default function WarehousePage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-700">Jumlah Masuk</label>
+                    <label className="text-xs font-semibold text-zinc-300">Jumlah Masuk</label>
                     <Input
                       type="number"
                       value={inboundQty}
                       onChange={(e) => setInboundQty(e.target.value)}
                       required
                       placeholder="1000"
-                      className="text-xs"
+                      className="text-xs bg-zinc-800/90 border-zinc-700 text-white"
                     />
                   </div>
-
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-700">No. Purchase Order (PO)</label>
+                    <label className="text-xs font-semibold text-zinc-300">Nomor Referensi PO / DO</label>
                     <Input
                       value={inboundRef}
                       onChange={(e) => setInboundRef(e.target.value)}
                       required
-                      placeholder="PO-2026-SUPP-044"
-                      className="text-xs"
+                      placeholder="PO-2026-001"
+                      className="text-xs bg-zinc-800/90 border-zinc-700 text-white"
                     />
                   </div>
                 </div>
 
-                <div className="p-3 rounded-lg bg-cyan-50 border border-cyan-200 text-xs text-cyan-900 space-y-1">
-                  <p className="font-semibold">Pencatatan Otomatis Supabase</p>
-                  <p className="text-[11px] text-cyan-700">
-                    Sistem langsung mencatat log mutasi stok ke tabel <code>stock_movements</code> dan menambah saldo fisik di <code>warehouse_stocks</code>.
-                  </p>
-                </div>
-
-                <div className="flex justify-end gap-2 pt-2">
+                <div className="flex justify-end gap-2 pt-2 border-t border-zinc-800">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => setShowInboundModal(false)}
+                    className="text-xs bg-zinc-800 border-zinc-700 text-zinc-300 hover:text-white"
                   >
                     Batal
                   </Button>
@@ -373,9 +355,9 @@ export default function WarehousePage() {
                     type="submit"
                     disabled={isSubmitting}
                     size="sm"
-                    className="bg-cyan-600 hover:bg-cyan-700 text-white font-semibold"
+                    className="bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs"
                   >
-                    {isSubmitting ? 'Menyimpan...' : 'Konfirmasi Penerimaan Barang'}
+                    {isSubmitting ? 'Menyimpan...' : 'Konfirmasi Inbound'}
                   </Button>
                 </div>
               </form>

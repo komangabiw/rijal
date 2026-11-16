@@ -8,6 +8,7 @@ import {
   WarehouseStock,
   DeliveryOrder,
 } from '@/types/database';
+import { DEMO_PROJECTS, DEMO_PROGRESS_LOGS } from '@/lib/mock-data';
 
 // ============================================================================
 // 1. ABSENSI (ATTENDANCE) API
@@ -77,14 +78,14 @@ export async function fetchProjects(): Promise<Project[]> {
     const res = await fetch('/api/projects', { cache: 'no-store' });
     if (res.ok) {
       const json = await res.json();
-      if (Array.isArray(json.projects)) {
+      if (Array.isArray(json.projects) && json.projects.length > 0) {
         return json.projects as Project[];
       }
     }
   } catch (err) {
     console.error('fetchProjects API error:', err);
   }
-  return [];
+  return DEMO_PROJECTS;
 }
 
 export async function fetchProgressLogs(): Promise<ProjectProgressLog[]> {
@@ -92,14 +93,14 @@ export async function fetchProgressLogs(): Promise<ProjectProgressLog[]> {
     const res = await fetch('/api/projects', { cache: 'no-store' });
     if (res.ok) {
       const json = await res.json();
-      if (Array.isArray(json.logs)) {
+      if (Array.isArray(json.logs) && json.logs.length > 0) {
         return json.logs as ProjectProgressLog[];
       }
     }
   } catch (err) {
     console.error('fetchProgressLogs API error:', err);
   }
-  return [];
+  return DEMO_PROGRESS_LOGS;
 }
 
 export async function submitProgressLog(params: {

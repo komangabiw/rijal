@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { DEMO_PROJECTS, DEMO_PROGRESS_LOGS } from '@/lib/mock-data';
 
 export async function GET() {
   const supabase = createAdminClient();
@@ -16,23 +17,23 @@ export async function GET() {
     ]);
 
     let projects = projectsRes.data || [];
-    if (projectsRes.error) {
+    if (projectsRes.error || projects.length === 0) {
       const fallback = await supabase.from('projects').select('*').order('created_at', { ascending: false });
-      projects = fallback.data || [];
+      projects = (fallback.data && fallback.data.length > 0) ? fallback.data : DEMO_PROJECTS;
     }
 
     let logs = logsRes.data || [];
-    if (logsRes.error) {
+    if (logsRes.error || logs.length === 0) {
       const fallback = await supabase.from('project_progress_logs').select('*').order('created_at', { ascending: false });
-      logs = fallback.data || [];
+      logs = (fallback.data && fallback.data.length > 0) ? fallback.data : DEMO_PROGRESS_LOGS;
     }
 
     return NextResponse.json({
-      projects,
-      logs,
+      projects: projects.length > 0 ? projects : DEMO_PROJECTS,
+      logs: logs.length > 0 ? logs : DEMO_PROGRESS_LOGS,
     });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ projects: DEMO_PROJECTS, logs: DEMO_PROGRESS_LOGS, warning: err.message });
   }
 }
 

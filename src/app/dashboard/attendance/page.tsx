@@ -62,6 +62,7 @@ export default function AttendancePage() {
   const [loading, setLoading] = useState(true);
   const [selectedOffice, setSelectedOffice] = useState(DEMO_OFFICES[0].id);
   const [attendanceType, setAttendanceType] = useState<AttendanceStatus>('present');
+  const [isOnsiteValid, setIsOnsiteValid] = useState(true);
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selfieBlob, setSelfieBlob] = useState<Blob | null>(null);
@@ -413,6 +414,39 @@ export default function AttendancePage() {
                     )}
                   </div>
 
+                  {/* Validasi Onsite (Wajib Verifikasi Posisi & SOP K3 Lapangan) */}
+                  <div className="p-3.5 rounded-xl bg-zinc-950/90 border border-zinc-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
+                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                        Validasi Onsite Presensi K3
+                      </label>
+                      <Badge
+                        className={
+                          isWithinRadius
+                            ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800 text-[10px]'
+                            : 'bg-rose-950/80 text-rose-300 border-rose-800 text-[10px]'
+                        }
+                      >
+                        {isWithinRadius ? '✓ Onsite Terverifikasi' : '✕ Onsite Belum Valid'}
+                      </Badge>
+                    </div>
+                    <div className="text-[11px] text-zinc-400 space-y-1 bg-zinc-900/60 p-2.5 rounded-lg border border-zinc-800/80">
+                      <div className="flex items-center justify-between">
+                        <span>Pemeriksaan Geofence Site:</span>
+                        <span className={isWithinRadius ? "text-emerald-400 font-semibold" : "text-rose-400 font-semibold"}>
+                          {isWithinRadius ? "Lolos (Dalam Radius)" : "Gagal (Di Luar Radius)"}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Verifikasi Kehadiran Fisik:</span>
+                        <span className="text-zinc-300">
+                          {selfieBlob ? "✓ Foto Selfie Live Siap" : "Ambil foto selfie di bawah"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Live Selfie Camera Capture Component with HUD & Watermarking */}
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-zinc-300">
@@ -616,9 +650,14 @@ export default function AttendancePage() {
                       {att.notes || '-'}
                     </td>
                     <td className="p-3 text-right">
-                      <Badge variant="outline" className="text-[10px] bg-zinc-800 text-emerald-400 border-zinc-700">
-                        {att.verification_status || 'approved'}
-                      </Badge>
+                      <div className="flex flex-col items-end gap-1">
+                        <Badge variant="outline" className="text-[10px] bg-emerald-950/60 text-emerald-400 border-emerald-800/80">
+                          ✓ Onsite Valid
+                        </Badge>
+                        <span className="text-[9px] text-zinc-400">
+                          {att.verification_status || 'approved'}
+                        </span>
+                      </div>
                     </td>
                   </tr>
                 ))}

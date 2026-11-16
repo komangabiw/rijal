@@ -37,11 +37,13 @@ export default function FinancePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showClaimModal, setShowClaimModal] = useState(false);
 
-  // New claim form state
+  // New claim form state with validation
   const [amount, setAmount] = useState('350000');
   const [category, setCategory] = useState<ExpenseCategory>('fuel');
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState('BBM Solar Truk Operasional Penarikan Kabel FO Bekasi');
   const [selectedProjectId, setSelectedProjectId] = useState('');
+  const [projectSearch, setProjectSearch] = useState('');
+  const [formTouched, setFormTouched] = useState(false);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,9 +62,10 @@ export default function FinancePage() {
     ]);
     setExpenses(expData || []);
     setInvoices(invData || []);
-    setProjects(projData || []);
-    if (projData && projData.length > 0) {
-      setSelectedProjectId(projData[0].id);
+    const validProjects = (projData && projData.length > 0) ? projData : [];
+    setProjects(validProjects);
+    if (validProjects.length > 0 && !selectedProjectId) {
+      setSelectedProjectId(validProjects[0].id);
     }
     setIsLoading(false);
   };
@@ -133,12 +136,29 @@ export default function FinancePage() {
 
   const handleCreateClaim = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormTouched(true);
+
+    if (!selectedProjectId) {
+      alert('Pilih proyek terkait terlebih dahulu sebelum mengajukan reimbursement.');
+      return;
+    }
+
+    if (!amount || Number(amount) <= 0) {
+      alert('Masukkan nominal pengajuan yang valid (lebih dari Rp 0).');
+      return;
+    }
+
+    if (!description.trim() || description.trim().length < 5) {
+      alert('Tuliskan deskripsi keperluan operasional lapangan minimal 5 karakter.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       const newClaim = await submitExpenseClaim({
         userId: user?.id || 'a0000000-0000-0000-0000-000000000006',
-        projectId: selectedProjectId || undefined,
+        projectId: selectedProjectId,
         category,
         amount: Number(amount) || 0,
         description,
@@ -157,8 +177,10 @@ export default function FinancePage() {
       setDescription('');
       setReceiptFile(null);
       setReceiptPreview(null);
-    } catch (err) {
-      console.error('Failed to submit claim:', err);
+      setFormTouched(false);
+      alert('Pengajuan reimbursement berhasil dikirim dan masuk antrean approval PM & Finance!');
+    } catch (err: any) {
+      alert(`Gagal mengajukan klaim: ${err.message || 'Terjadi kesalahan sistem'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -349,7 +371,7 @@ export default function FinancePage() {
         </CardContent>
       </Card>
 
-      {/* Claim Submission Modal - Clean Dark UI */}
+      {/* Claim Submission Modal - Sesuai Gambar 2 dengan Combobox Dimension Proyek & Validasi Lengkap */}
       {showClaimModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
           <Card className="w-full max-w-lg bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
@@ -357,7 +379,7 @@ export default function FinancePage() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base font-bold text-white flex items-center gap-2">
                   <Coins className="w-4 h-4 text-amber-400" />
-                  Ajukan Reimbursement Operasional
+                  Form Pengajuan Biaya / Reimbursement
                 </CardTitle>
                 <button
                   onClick={() => setShowClaimModal(false)}
@@ -367,33 +389,78 @@ export default function FinancePage() {
                 </button>
               </div>
               <CardDescription className="text-xs text-zinc-400">
-                Klaim BBM, koordinasi lapangan, hotel, sewa alat bantu & material darurat
+                Pilih proyek tujuan pembebanan anggaran, rincian biaya, serta bukti struk pembayaran
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 sm:p-5 space-y-4 overflow-y-auto">
-              <form onSubmit={handleCreateClaim} className="space-y-3.5">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-zinc-300">Pilih Proyek Terkait</label>
+              <form onSubmit={handleCreateClaim} className="space-y-4">
+                {/* Combobox & Dimension Data Proyek dari DBMS */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-zinc-300">
+                      Pilih Proyek Terkait <span className="text-red-400">*</span>
+                    </label>
+                    <span className="text-[10px] text-zinc-500 font-mono">
+                      Dimension Data DBMS: {projects.length} Proyek Aktif
+                    </span>
+                  </div>
+
                   <select
                     value={selectedProjectId}
-                    onChange={(e) => setSelectedProjectId(e.target.value)}
-                    className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    onChange={(e) => {
+                      setSelectedProjectId(e.target.value);
+                      setFormTouched(true);
+                    }}
+                    required
+                    className={`w-full text-xs bg-zinc-950 border rounded-xl p-2.5 text-white focus:outline-none focus:ring-1 transition-all ${
+                      formTouched && !selectedProjectId
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-zinc-700 focus:ring-amber-500'
+                    }`}
                   >
+                    <option value="" disabled className="text-zinc-500">
+                      -- Pilih Proyek Terkait (Wajib) --
+                    </option>
                     {projects.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.project_code} - {p.name}
+                      <option key={p.id} value={p.id} className="bg-zinc-900 text-white py-1">
+                        [{p.project_code}] {p.name} — {p.client?.name || 'Operator Seluler'} (Pagu RAB: {formatRupiah(p.total_budget)})
                       </option>
                     ))}
                   </select>
+
+                  {/* Validasi & Info Proyek Terpilih */}
+                  {selectedProjectId ? (
+                    (() => {
+                      const proj = projects.find((p) => p.id === selectedProjectId);
+                      return proj ? (
+                        <div className="p-2.5 rounded-lg bg-zinc-950/80 border border-zinc-800 text-[11px] space-y-0.5 text-zinc-300">
+                          <div className="flex justify-between font-medium">
+                            <span className="text-amber-400">{proj.name}</span>
+                            <span className="text-zinc-400">Kode: {proj.project_code}</span>
+                          </div>
+                          <div className="flex justify-between text-zinc-500 text-[10px]">
+                            <span>Klien: {proj.client?.name || 'PT Telekomunikasi Indonesia'}</span>
+                            <span className="text-emerald-400">Pagu Anggaran: {formatRupiah(proj.total_budget)}</span>
+                          </div>
+                        </div>
+                      ) : null;
+                    })()
+                  ) : formTouched ? (
+                    <p className="text-[11px] text-red-400 font-medium">
+                      ⚠️ Wajib memilih proyek tujuan untuk pembebanan pos anggaran reimbursement.
+                    </p>
+                  ) : null}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-zinc-300">Kategori Biaya</label>
+                    <label className="text-xs font-semibold text-zinc-300">
+                      Kategori Biaya <span className="text-red-400">*</span>
+                    </label>
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
-                      className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                      className="w-full text-xs bg-zinc-950 border border-zinc-700 rounded-xl p-2.5 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
                     >
                       <option value="fuel">Bahan Bakar (BBM Truk/Mobil)</option>
                       <option value="local_permit_koordinasi">Koordinasi Lapangan / Izin RW</option>
@@ -406,32 +473,52 @@ export default function FinancePage() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-zinc-300">Nominal (IDR)</label>
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-semibold text-zinc-300">
+                        Nominal (IDR) <span className="text-red-400">*</span>
+                      </label>
+                      {Number(amount) > 0 && (
+                        <span className="text-[10px] text-emerald-400 font-semibold font-mono">
+                          {formatRupiah(Number(amount))}
+                        </span>
+                      )}
+                    </div>
                     <Input
                       type="number"
+                      min="1000"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                       required
                       placeholder="350000"
-                      className="text-xs bg-zinc-800/90 border-zinc-700 text-white placeholder:text-zinc-500"
+                      className="text-xs bg-zinc-950 border-zinc-700 text-white placeholder:text-zinc-500 rounded-xl h-10 font-bold"
                     />
+                    {Number(amount) <= 0 && formTouched && (
+                      <p className="text-[10px] text-red-400">Nominal klaim harus lebih dari Rp 0</p>
+                    )}
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-zinc-300">Deskripsi Keperluan Lapangan</label>
+                  <label className="text-xs font-semibold text-zinc-300">
+                    Deskripsi Keperluan Lapangan <span className="text-red-400">*</span>
+                  </label>
                   <Input
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     required
                     placeholder="BBM Solar Truk Operasional Penarikan Kabel FO Bekasi"
-                    className="text-xs bg-zinc-800/90 border-zinc-700 text-white placeholder:text-zinc-500"
+                    className="text-xs bg-zinc-950 border-zinc-700 text-white placeholder:text-zinc-500 rounded-xl h-10"
                   />
+                  {description.trim().length < 5 && formTouched && (
+                    <p className="text-[10px] text-red-400">Deskripsi pekerjaan minimal 5 karakter</p>
+                  )}
                 </div>
 
                 {/* File Upload with Preview */}
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-zinc-300">Upload Foto Struk / Kwitansi (Supabase Storage)</label>
+                  <label className="text-xs font-semibold text-zinc-300">
+                    Upload Foto Struk / Kwitansi (Supabase Storage)
+                  </label>
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -450,7 +537,7 @@ export default function FinancePage() {
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-white truncate">{receiptFile?.name}</p>
                         <p className="text-[10px] text-emerald-400 flex items-center gap-1 font-medium mt-0.5">
-                          <Check className="w-3 h-3" /> Siap diunggah ke finance-receipts
+                          <Check className="w-3 h-3" /> Siap diunggah ke Supabase Storage (finance-receipts)
                         </p>
                       </div>
                       <Button
@@ -469,36 +556,34 @@ export default function FinancePage() {
                   ) : (
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="p-4 rounded-xl border border-dashed border-zinc-700 bg-zinc-950/60 text-center space-y-1 cursor-pointer hover:border-amber-500 transition-colors group"
+                      className="p-5 rounded-xl border-2 border-dashed border-amber-600/40 bg-zinc-950/60 text-center space-y-1.5 cursor-pointer hover:border-amber-500 hover:bg-zinc-950 transition-colors group"
                     >
-                      <Upload className="w-6 h-6 mx-auto text-zinc-500 group-hover:text-amber-400" />
-                      <span className="text-xs font-semibold text-zinc-300 block">
+                      <Upload className="w-7 h-7 mx-auto text-amber-500 group-hover:scale-110 transition-transform" />
+                      <span className="text-xs font-bold text-amber-300 block">
                         Klik untuk Pilih Foto Struk / Kwitansi
                       </span>
-                      <span className="text-[10px] text-zinc-500 block">
+                      <span className="text-[10px] text-zinc-400 block">
                         Format JPG, PNG, atau PDF (Disimpan ke Supabase Storage finance-receipts)
                       </span>
                     </div>
                   )}
                 </div>
 
-                <div className="flex justify-end gap-2 pt-2 border-t border-zinc-800">
+                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-800">
                   <Button
                     type="button"
-                    variant="outline"
-                    size="sm"
+                    variant="ghost"
                     onClick={() => setShowClaimModal(false)}
-                    className="text-xs bg-zinc-800 border-zinc-700 text-zinc-300 hover:text-white"
+                    className="text-xs text-zinc-400 hover:text-white h-9 rounded-xl"
                   >
                     Batal
                   </Button>
                   <Button
                     type="submit"
-                    disabled={isSubmitting}
-                    size="sm"
-                    className="bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs"
+                    disabled={isSubmitting || !selectedProjectId || Number(amount) <= 0}
+                    className="bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs h-9 px-5 rounded-xl shadow-md shadow-amber-600/30 transition-all"
                   >
-                    {isSubmitting ? 'Mengunggah & Menyimpan...' : 'Kirim Pengajuan Klaim'}
+                    {isSubmitting ? 'Mengirim Pengajuan Klaim...' : 'Kirim Pengajuan Klaim'}
                   </Button>
                 </div>
               </form>

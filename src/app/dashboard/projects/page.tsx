@@ -20,6 +20,11 @@ import {
   Upload,
   RotateCw,
   CheckCircle2,
+  Download,
+  Filter,
+  Check,
+  Clock,
+  Layers,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -32,6 +37,25 @@ import {
   CartesianGrid,
 } from 'recharts';
 
+export type ImplementationStage =
+  | 'MOS'
+  | 'Install'
+  | 'Integrasi'
+  | 'SIR + ATP'
+  | 'Dismantle'
+  | 'Survey';
+
+interface StageDetail {
+  id: string;
+  stage: ImplementationStage;
+  label: string;
+  target: number;
+  actual: number;
+  unit: string;
+  status: 'completed' | 'in_progress' | 'pending';
+  validationNote: string;
+}
+
 export default function ProjectsPage() {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>(DEMO_PROJECTS);
@@ -41,6 +65,7 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(true);
 
   // Form states for adding a progress log
+  const [selectedStage, setSelectedStage] = useState<ImplementationStage>('Install');
   const [logVolume, setLogVolume] = useState('250');
   const [logDesc, setLogDesc] = useState('');
   const [hasIssue, setHasIssue] = useState(false);
@@ -81,6 +106,96 @@ export default function ProjectsPage() {
     setLoading(false);
   };
 
+  const getStageBreakdown = (proj: Project): StageDetail[] => {
+    const targetVol = Number(proj.target_volume) || 1000;
+    const actualVol = Number(proj.actual_volume) || 0;
+    const pct = proj.progress_percentage || 0;
+
+    return [
+      {
+        id: 'stg-1',
+        stage: 'Survey',
+        label: 'Site Survey & Feasibility Test',
+        target: 100,
+        actual: 100,
+        unit: '%',
+        status: 'completed',
+        validationNote: 'Joint survey rute approved oleh Telco Operator & Dinas Terkait.',
+      },
+      {
+        id: 'stg-2',
+        stage: 'MOS',
+        label: 'Material On Site (Drop FO, Tiang, Aksesoris)',
+        target: 100,
+        actual: pct >= 80 ? 100 : Math.min(100, Math.round(pct + 20)),
+        unit: '%',
+        status: pct >= 80 ? 'completed' : 'in_progress',
+        validationNote: 'Material kabel FO, clamp, dan tiang telah berada di warehouse staging site.',
+      },
+      {
+        id: 'stg-3',
+        stage: 'Install',
+        label: 'Instalasi Fisik (Penarikan Kabel & Erection)',
+        target: targetVol,
+        actual: actualVol,
+        unit: proj.target_unit,
+        status: pct >= 100 ? 'completed' : pct > 0 ? 'in_progress' : 'pending',
+        validationNote: `Pemasangan kabel fisik lapangan terealisasi ${actualVol.toLocaleString('id-ID')} ${proj.target_unit}.`,
+      },
+      {
+        id: 'stg-4',
+        stage: 'Integrasi',
+        label: 'Splicing Core, Joint Closure & Patching',
+        target: Math.round(targetVol * 0.9),
+        actual: Math.round(actualVol * 0.85),
+        unit: proj.target_unit,
+        status: pct >= 90 ? 'completed' : pct > 20 ? 'in_progress' : 'pending',
+        validationNote: 'Penyambungan core fiber dan patching ODF/ODC aktif selesai dikonfigurasi.',
+      },
+      {
+        id: 'stg-5',
+        stage: 'SIR + ATP',
+        label: 'Site Integration Report & Acceptance Test',
+        target: targetVol,
+        actual: Math.round(actualVol * 0.7),
+        unit: proj.target_unit,
+        status: pct >= 100 ? 'completed' : pct > 30 ? 'in_progress' : 'pending',
+        validationNote: 'Uji redaman OTDR & Optical Power Meter siap verifikasi QA Project Manager.',
+      },
+      {
+        id: 'stg-6',
+        stage: 'Dismantle',
+        label: 'Dismantling Perangkat Lama & Housekeeping',
+        target: 100,
+        actual: pct >= 60 ? 100 : 50,
+        unit: '%',
+        status: pct >= 60 ? 'completed' : 'in_progress',
+        validationNote: 'Perapihan tiang kabel lama dan kebersihan area kerja site K3.',
+      },
+    ];
+  };
+
+  const handleExportBreakdownCSV = () => {
+    const stages = getStageBreakdown(selectedProject);
+    const csvContent =
+      'data:text/csv;charset=utf-8,' +
+      'No,Kode Proyek,Nama Proyek,Klien,Tahapan Aktivitas,Target,Realisasi Aktual,Persentase (%),Satuan,Status,Catatan Validasi\n' +
+      stages
+        .map(
+          (s, idx) =>
+            `"${idx + 1}","${selectedProject.project_code}","${selectedProject.name}","${selectedProject.client?.name || 'Operator Seluler'}","${s.stage} - ${s.label}","${s.target}","${s.actual}","${Math.min(100, Math.round((s.actual / (s.target || 1)) * 100))}","${s.unit}","${s.status}","${s.validationNote}"`
+        )
+        .join('\n');
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `breakdown_tahapan_${selectedProject.project_code}_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleFileChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     type: 'before' | 'progress' | 'after'
@@ -112,7 +227,7 @@ export default function ProjectsPage() {
       projectId: selectedProject.id,
       technicianId: user?.id || 'a0000000-0000-0000-0000-000000000006',
       volumeRealized: volumeNum,
-      description: logDesc || 'Penarikan kabel lanjutan dan perapihan span FO.',
+      description: `[Tahap: ${selectedStage}] ${logDesc || `Pekerjaan tahapan ${selectedStage} telah diselesaikan di site lapangan.`}`,
       photoBefore: fileBefore || undefined,
       photoProgress: fileProgress || undefined,
       photoAfter: fileAfter || undefined,
@@ -147,6 +262,7 @@ export default function ProjectsPage() {
     setPreviewBefore(null);
     setPreviewProgress(null);
     setPreviewAfter(null);
+    alert(`Progres tahapan ${selectedStage} (${volumeNum} ${selectedProject.target_unit}) berhasil disimpan ke database!`);
   };
 
   const chartData = projects.map((p) => ({
@@ -189,28 +305,46 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {/* Target vs Actual Comparison Chart Card */}
-      <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl">
-        <CardHeader className="pb-2 border-b border-zinc-800/80">
-          <CardTitle className="text-sm font-bold text-white flex items-center justify-between">
-            <span>Perbandingan Target vs. Realisasi Fisik (Semua Proyek)</span>
-            <Badge variant="outline" className="text-xs bg-zinc-800 border-zinc-700 text-zinc-300">
-              Meters / Sites
-            </Badge>
-          </CardTitle>
-          <CardDescription className="text-xs text-zinc-400">
-            Realisasi otomatis tersinkronisasi dari seluruh log harian teknisi lapangan
-          </CardDescription>
+      {/* Target vs Actual Comparison Chart Card - Clickable for Breakdown Detail */}
+      <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl overflow-hidden shadow-sm">
+        <CardHeader className="pb-3 border-b border-zinc-800/80 bg-zinc-950/40">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <CardTitle className="text-sm font-bold text-white flex items-center gap-2">
+                <Layers className="w-4 h-4 text-blue-400" />
+                <span>Perbandingan Target vs. Realisasi Fisik (Semua Proyek)</span>
+              </CardTitle>
+              <CardDescription className="text-xs text-zinc-400 mt-0.5">
+                💡 <strong className="text-blue-400">Interaktif:</strong> Klik pada batang grafik di bawah untuk membuka breakdown rincian tahapan & ekspor data.
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-xs bg-zinc-800 border-zinc-700 text-zinc-300">
+                Proyek Terpilih: {selectedProject.project_code}
+              </Badge>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="pt-4">
-          <div className="h-60 w-full">
+          <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <BarChart
+                data={chartData}
+                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                onClick={(e: any) => {
+                  if (e && e.activePayload && e.activePayload.length > 0) {
+                    const code = e.activePayload[0].payload.name;
+                    const p = projects.find((proj) => proj.project_code === code);
+                    if (p) setSelectedProject(p);
+                  }
+                }}
+                className="cursor-pointer"
+              >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" />
                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#71717a' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: '#71717a' }} axisLine={false} tickLine={false} />
                 <Tooltip
-                  formatter={(val) => [Number(val).toLocaleString('id-ID'), 'Volume']}
+                  formatter={(val, name) => [Number(val).toLocaleString('id-ID'), name === 'Target' ? 'Volume Target' : 'Volume Realisasi']}
                   contentStyle={{
                     backgroundColor: '#18181b',
                     borderRadius: '8px',
@@ -220,10 +354,155 @@ export default function ProjectsPage() {
                   }}
                 />
                 <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }} />
-                <Bar dataKey="Target" fill="#52525b" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Realisasi" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <Bar
+                  dataKey="Target"
+                  fill="#52525b"
+                  radius={[4, 4, 0, 0]}
+                  onClick={(entry: any) => {
+                    if (entry && entry.name) {
+                      const p = projects.find((proj) => proj.project_code === entry.name);
+                      if (p) setSelectedProject(p);
+                    }
+                  }}
+                />
+                <Bar
+                  dataKey="Realisasi"
+                  fill="#3b82f6"
+                  radius={[4, 4, 0, 0]}
+                  onClick={(entry: any) => {
+                    if (entry && entry.name) {
+                      const p = projects.find((proj) => proj.project_code === entry.name);
+                      if (p) setSelectedProject(p);
+                    }
+                  }}
+                />
               </BarChart>
             </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Visual Table Breakdown Detail Section with Slicer Combobox & Export Button */}
+      <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl shadow-sm">
+        <CardHeader className="pb-3 border-b border-zinc-800/80">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-xs font-bold text-blue-400 bg-blue-950/80 border border-blue-800 px-2 py-0.5 rounded-lg">
+                  {selectedProject.project_code}
+                </span>
+                <CardTitle className="text-sm font-bold text-white">
+                  Tabel Breakdown Detail Tahapan: {selectedProject.name}
+                </CardTitle>
+              </div>
+              <CardDescription className="text-xs text-zinc-400 mt-1">
+                Visualisasi data tahapan K3 (MOS, Install, Integrasi, SIR + ATP, Dismantle, Survey) & realisasi volume fisik
+              </CardDescription>
+            </div>
+
+            <div className="flex items-center gap-2.5 flex-wrap">
+              {/* Slicer / Combobox Proyek */}
+              <div className="flex items-center gap-1.5 bg-zinc-950 p-1 rounded-xl border border-zinc-800">
+                <Filter className="w-3.5 h-3.5 text-zinc-400 ml-1.5" />
+                <select
+                  value={selectedProject.id}
+                  onChange={(e) => {
+                    const p = projects.find((proj) => proj.id === e.target.value);
+                    if (p) setSelectedProject(p);
+                  }}
+                  className="bg-transparent text-xs text-white p-1 pr-2 focus:outline-none"
+                >
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id} className="bg-zinc-900 text-white">
+                      Slicer: [{p.project_code}] {p.name.slice(0, 32)}...
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Tombol Export Data Breakdown */}
+              <Button
+                onClick={handleExportBreakdownCSV}
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs h-8 px-3 rounded-xl font-semibold shadow-sm flex items-center gap-1.5"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Export Data (CSV)
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-zinc-300">
+              <thead className="bg-zinc-950/70 text-[11px] font-semibold text-zinc-400 border-b border-zinc-800">
+                <tr>
+                  <th className="px-4 py-3">No</th>
+                  <th className="px-4 py-3">Tahapan Aktivitas</th>
+                  <th className="px-4 py-3">Target Volume</th>
+                  <th className="px-4 py-3">Realisasi Aktual</th>
+                  <th className="px-4 py-3">Progres Fisik</th>
+                  <th className="px-4 py-3">Status Milestone</th>
+                  <th className="px-4 py-3">Validasi Lapangan</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-800/60 font-sans text-xs">
+                {getStageBreakdown(selectedProject).map((stg, idx) => {
+                  const pct = Math.min(100, Math.round((stg.actual / (stg.target || 1)) * 100));
+                  return (
+                    <tr key={stg.id} className="hover:bg-zinc-800/40 transition-colors">
+                      <td className="px-4 py-3.5 font-mono text-zinc-500">{idx + 1}</td>
+                      <td className="px-4 py-3.5 font-medium text-white">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-blue-400 bg-blue-950/60 px-1.5 py-0.5 rounded border border-blue-900 text-[11px]">
+                            {stg.stage}
+                          </span>
+                          <span>{stg.label}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 font-mono text-zinc-300">
+                        {stg.target.toLocaleString('id-ID')} {stg.unit}
+                      </td>
+                      <td className="px-4 py-3.5 font-mono font-bold text-white">
+                        {stg.actual.toLocaleString('id-ID')} {stg.unit}
+                      </td>
+                      <td className="px-4 py-3.5 w-48">
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-[11px]">
+                            <span className="font-bold text-blue-400">{pct}%</span>
+                          </div>
+                          <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+                            <div
+                              className="bg-blue-500 h-1.5 rounded-full"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <Badge
+                          className={
+                            stg.status === 'completed'
+                              ? 'bg-emerald-950/70 text-emerald-400 border-emerald-800 text-[10px]'
+                              : stg.status === 'in_progress'
+                              ? 'bg-blue-950/70 text-blue-300 border-blue-800 text-[10px]'
+                              : 'bg-zinc-800 text-zinc-400 text-[10px]'
+                          }
+                        >
+                          {stg.status === 'completed' ? 'Selesai' : stg.status === 'in_progress' ? 'Sedang Berjalan' : 'Menunggu'}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3.5 text-zinc-400 text-[11px]">
+                        <span className="flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          {stg.validationNote}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </CardContent>
       </Card>
@@ -446,17 +725,45 @@ export default function ProjectsPage() {
             </CardHeader>
             <CardContent className="p-4 sm:p-5 space-y-4 overflow-y-auto">
               <form onSubmit={handleAddLog} className="space-y-4">
-                <div className="space-y-1">
+                {/* Combobox & Validasi Tahapan Pekerjaan Lapangan Sesuai Gambar 3 */}
+                <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-zinc-300">
-                    Volume Realisasi Hari Ini ({selectedProject.target_unit})
+                    Tahapan Aktivitas (Combobox / Validasi) <span className="text-blue-400">*</span>
                   </label>
+                  <select
+                    value={selectedStage}
+                    onChange={(e) => setSelectedStage(e.target.value as ImplementationStage)}
+                    className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                  >
+                    <option value="MOS">1. MOS</option>
+                    <option value="Install">2. Install</option>
+                    <option value="Integrasi">3. Integrasi</option>
+                    <option value="SIR + ATP">4. SIR + ATP</option>
+                    <option value="Dismantle">5. Dismantle</option>
+                    <option value="Survey">6. Survey</option>
+                  </select>
+                  <p className="text-[10px] text-zinc-400">
+                    Pilih tahapan standar implementasi telekomunikasi yang sedang dikerjakan.
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-semibold text-zinc-300">
+                      Volume Realisasi Hari Ini ({selectedProject.target_unit}) <span className="text-blue-400">*</span>
+                    </label>
+                    <span className="text-[10px] text-blue-400 font-mono font-medium">
+                      Target: {Number(selectedProject.target_volume).toLocaleString('id-ID')} {selectedProject.target_unit}
+                    </span>
+                  </div>
                   <Input
                     type="number"
+                    min="1"
                     value={logVolume}
                     onChange={(e) => setLogVolume(e.target.value)}
                     required
                     placeholder="Contoh: 250"
-                    className="text-xs bg-zinc-800/90 border-zinc-700 text-white placeholder:text-zinc-500"
+                    className="text-xs bg-zinc-800/90 border-zinc-700 text-white placeholder:text-zinc-500 rounded-xl h-10 font-bold"
                   />
                 </div>
 

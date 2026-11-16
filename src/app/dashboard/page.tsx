@@ -98,90 +98,8 @@ export default function DashboardOverviewPage() {
 
   return (
     <div className="space-y-6 text-zinc-100">
-      {/* Header Info: Peran ERP & Power BI Live Analytics */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-zinc-900 border border-zinc-800 p-4 sm:p-5 rounded-2xl shadow-sm">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400">
-              <Sparkles className="w-4 h-4" />
-            </span>
-            <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight">
-              Executive Business Intelligence & Data Administrasi ERP
-            </h1>
-            <Badge className="bg-emerald-950/80 text-emerald-300 border-emerald-800 text-[10px] hidden sm:inline-flex">
-              ● Power BI Live Cloud
-            </Badge>
-          </div>
-          <p className="text-xs text-zinc-400 leading-relaxed max-w-3xl">
-            Sistem terintegrasi: <strong className="text-white">Microsoft Power BI</strong> sebagai pusat visualisasi analitik & intelligence, serta <strong className="text-white">Portal ERP</strong> sebagai engine administrasi transaksi operasional K3, absensi, reimbursement, proyek, dan logistik.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <a
-            href={POWER_BI_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white px-3 py-2 rounded-xl shadow-md shadow-amber-600/20 transition-colors"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            Buka Tab Penuh
-          </a>
-        </div>
-      </div>
-
-      {/* EMBED POWER BI LIVE DASHBOARD CONTAINER */}
-      <Card
-        ref={iframeContainerRef}
-        className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl overflow-hidden shadow-xl"
-      >
-        <CardHeader className="bg-zinc-950/80 border-b border-zinc-800/80 p-3.5 sm:p-4 flex flex-row items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <div>
-              <CardTitle className="text-sm font-bold text-white flex items-center gap-2">
-                <span>New Dashboard DSN</span>
-                <span className="text-[11px] font-normal text-zinc-400 hidden sm:inline">
-                  — Power BI Embedded Interactive Report
-                </span>
-              </CardTitle>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleToggleFullscreen}
-              className="text-xs text-zinc-400 hover:text-white hover:bg-zinc-800 h-8 px-2.5 rounded-lg"
-              title="Perbesar Layar Penuh (Fullscreen)"
-            >
-              <Maximize2 className="w-3.5 h-3.5 mr-1" />
-              <span className="hidden sm:inline">Fullscreen</span>
-            </Button>
-          </div>
-        </CardHeader>
-
-        <CardContent className="p-0 bg-black">
-          {/* Responsive Power BI iframe frame */}
-          <div className="w-full relative aspect-[16/10] sm:aspect-[16/9] min-h-[500px] sm:min-h-[640px] lg:min-h-[760px]">
-            <iframe
-              key={iframeKey}
-              title="New Dashboard DSN"
-              src={POWER_BI_URL}
-              width="100%"
-              height="100%"
-              frameBorder="0"
-              allowFullScreen={true}
-              allow="fullscreen; geolocation; microphone; camera"
-              className="w-full h-full border-0 absolute inset-0"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* DATA ADMINISTRASI OPERASIONAL (RINGKASAN ERP) */}
-      <div className="space-y-3 pt-2">
+      {/* DATA ADMINISTRASI OPERASIONAL (RINGKASAN ERP TERINTEGRASI) - DITARUH DI ATAS NEW DASHBOARD DSN */}
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Database className="w-4 h-4 text-blue-400" />
@@ -253,13 +171,74 @@ export default function DashboardOverviewPage() {
               <div className="text-2xl font-bold tracking-tight text-white">
                 {completionRate}
               </div>
-              <p className="text-[11px] text-emerald-400 mt-0.5">
+              <p className="text-[11px] text-emerald-400 mt-0.5 font-medium">
                 Target SLA on-track tercapai
               </p>
             </div>
           </Card>
         </div>
       </div>
+
+      {/* EMBED POWER BI LIVE DASHBOARD CONTAINER */}
+      <Card
+        ref={iframeContainerRef}
+        className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl overflow-hidden shadow-xl"
+      >
+        <CardHeader className="bg-zinc-950/80 border-b border-zinc-800/80 p-3.5 sm:p-4 flex flex-row items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <div>
+              <CardTitle className="text-sm font-bold text-white flex items-center gap-2">
+                <span>New Dashboard DSN</span>
+                <span className="text-[11px] font-normal text-zinc-400 hidden sm:inline">
+                  — Power BI Embedded Interactive Report
+                </span>
+              </CardTitle>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleToggleFullscreen}
+              className="text-xs text-zinc-400 hover:text-white hover:bg-zinc-800 h-8 px-2.5 rounded-lg border border-transparent hover:border-zinc-700"
+              title="Perbesar Layar Penuh (Fullscreen)"
+            >
+              <Maximize2 className="w-3.5 h-3.5 mr-1" />
+              <span className="hidden sm:inline">Fullscreen</span>
+            </Button>
+            {/* Tombol Buka Tab Penuh ditaruh di samping kanan Fullscreen */}
+            <a
+              href={POWER_BI_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg shadow-md shadow-amber-600/20 transition-all hover:scale-105 active:scale-95 h-8 border border-amber-500/30"
+              title="Buka Power BI di Tab Penuh Baru"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Buka Tab Penuh</span>
+            </a>
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-0 bg-black">
+          {/* Responsive Power BI iframe frame */}
+          <div className="w-full relative aspect-[16/10] sm:aspect-[16/9] min-h-[500px] sm:min-h-[640px] lg:min-h-[760px]">
+            <iframe
+              key={iframeKey}
+              title="New Dashboard DSN"
+              src={POWER_BI_URL}
+              width="100%"
+              height="100%"
+              frameBorder="0"
+              allowFullScreen={true}
+              allow="fullscreen; geolocation; microphone; camera"
+              className="w-full h-full border-0 absolute inset-0"
+            />
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -169,15 +169,12 @@ export default function LogisticsPage() {
             <Truck className="w-5 h-5 text-indigo-400" />
             Logistik Distribusi, Surat Jalan & POD Digital
           </h1>
-          <p className="text-xs text-zinc-400 mt-0.5">
-            Pengiriman material FO dari Central Warehouse, monitoring driver, dan konfirmasi serah terima Proof of Delivery (POD).
-          </p>
         </div>
 
         <div className="flex items-center gap-2">
           <Button
             onClick={() => setShowDispatchModal(true)}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/30"
+            className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/30 transition-all hover:scale-105 active:scale-95"
           >
             <Plus className="w-4 h-4 mr-1.5" />
             Terbitkan Surat Jalan Baru
@@ -185,48 +182,68 @@ export default function LogisticsPage() {
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-medium text-zinc-400 uppercase tracking-wide">
+      {/* KPI Cards (Balanced & Uniform Grid) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Card 1: Surat Jalan Sedang Transit */}
+        <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl flex flex-col justify-between h-full hover:border-zinc-700 transition-colors shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-3 pt-5 px-5">
+            <CardTitle className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
               Surat Jalan Sedang Transit
             </CardTitle>
-            <Truck className="w-4 h-4 text-amber-400" />
+            <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 shrink-0">
+              <Truck className="w-4 h-4" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-400">
+          <CardContent className="pb-5 px-5 pt-0">
+            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-amber-400">
               {deliveries.filter((d) => d.status === 'in_transit').length} Pengiriman
             </div>
-            <p className="text-xs text-zinc-400 font-medium mt-1">Dalam Perjalanan ke Site Lapangan</p>
+            <p className="text-xs text-amber-400/90 font-medium mt-1.5 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              Dalam Perjalanan ke Site Lapangan
+            </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-medium text-zinc-400 uppercase tracking-wide">
-              Pengiriman Berhasil (Delivered)
+        {/* Card 2: Pengiriman Berhasil */}
+        <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl flex flex-col justify-between h-full hover:border-zinc-700 transition-colors shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-3 pt-5 px-5">
+            <CardTitle className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+              Pengiriman Berhasil
             </CardTitle>
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shrink-0">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-emerald-400">
+          <CardContent className="pb-5 px-5 pt-0">
+            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-emerald-400">
               {deliveries.filter((d) => d.status === 'delivered').length} Selesai
             </div>
-            <p className="text-xs text-emerald-400 font-medium mt-1">POD Tervalidasi & TTD Lengkap</p>
+            <p className="text-xs text-emerald-400 font-medium mt-1.5 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              POD Tervalidasi & TTD Lengkap
+            </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-medium text-zinc-400 uppercase tracking-wide">
+        {/* Card 3: Permintaan Material Menunggu */}
+        <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 rounded-2xl flex flex-col justify-between h-full hover:border-zinc-700 transition-colors shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-3 pt-5 px-5">
+            <CardTitle className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
               Permintaan Material Menunggu
             </CardTitle>
-            <FileText className="w-4 h-4 text-blue-400" />
+            <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 shrink-0">
+              <FileText className="w-4 h-4" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{requests.length} Request</div>
-            <p className="text-xs text-blue-400 font-medium mt-1">Disetujui PM untuk Dispatch</p>
+          <CardContent className="pb-5 px-5 pt-0">
+            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+              {requests.length} Request
+            </div>
+            <p className="text-xs text-blue-400 font-medium mt-1.5 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+              Disetujui PM untuk Dispatch
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -271,8 +288,9 @@ export default function LogisticsPage() {
               <div className="shrink-0 flex items-center gap-2">
                 <Button
                   size="sm"
-                  onClick={() => setShowDispatchModal(true)}
-                  className="bg-blue-600 hover:bg-blue-500 text-white text-xs"
+                  disabled
+                  className="bg-zinc-800 text-zinc-500 border border-zinc-700/80 text-xs cursor-not-allowed opacity-60 shadow-none hover:bg-zinc-800"
+                  title="Hanya tombol Terbitkan Surat Jalan Baru yang dapat diklik"
                 >
                   Kirim via Surat Jalan
                 </Button>
@@ -303,7 +321,7 @@ export default function LogisticsPage() {
                   <th className="p-3">No. Surat Jalan</th>
                   <th className="p-3">Gudang Asal</th>
                   <th className="p-3">Destinasi Site & Proyek</th>
-                  <th className="p-3">Armada / Driver</th>
+                  <th className="p-3">Driver</th>
                   <th className="p-3">Status Pengiriman</th>
                   <th className="p-3 text-right">Proof of Delivery (POD)</th>
                 </tr>
@@ -550,7 +568,8 @@ export default function LogisticsPage() {
                     <label className="text-xs font-semibold text-zinc-300">Nama Driver</label>
                     <Input
                       value={driverName}
-                      onChange={(e) => setDriverName(e.target.value)}
+                      onChange={(e) => setDriverName(e.target.value.slice(0, 30))}
+                      maxLength={30}
                       required
                       className="text-xs bg-zinc-800/90 border-zinc-700 text-white"
                     />
@@ -559,7 +578,8 @@ export default function LogisticsPage() {
                     <label className="text-xs font-semibold text-zinc-300">Nomor Kendaraan</label>
                     <Input
                       value={vehicleNumber}
-                      onChange={(e) => setVehicleNumber(e.target.value)}
+                      onChange={(e) => setVehicleNumber(e.target.value.slice(0, 30))}
+                      maxLength={30}
                       required
                       className="text-xs bg-zinc-800/90 border-zinc-700 text-white"
                     />

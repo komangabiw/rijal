@@ -1,0 +1,9 @@
+name = "pt-telecom-erp"
+compatibility_date = "2026-11-16"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
+
+# Environment variables bindings for Cloudflare Pages
+[vars]
+NEXT_PUBLIC_APP_NAME = "PT Telekomunikasi Operations ERP"
+NEXT_PUBLIC_COMPANY_NAME = "PT Telekomunikasi Indonesia"

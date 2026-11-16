@@ -7,11 +7,13 @@ export default function RootPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // If a role was selected previously, go to dashboard, otherwise login
+    // If session cookie and role are present, go to dashboard, otherwise login
+    const hasCookie = document.cookie.split(';').some((item) => item.trim().startsWith('telecom_session=') && item.split('=')[1]);
     const saved = localStorage.getItem('pt_telecom_role');
-    if (saved) {
+    if (saved && hasCookie) {
       router.push('/dashboard');
     } else {
+      localStorage.removeItem('pt_telecom_role');
       router.push('/login');
     }
   }, [router]);

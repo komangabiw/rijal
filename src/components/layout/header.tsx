@@ -21,15 +21,29 @@ import {
   AlertTriangle,
   Clock,
   X,
+  ChevronDown,
+  Loader2,
 } from 'lucide-react';
 
+const HIERARCHY_ROLES: { role: UserRole; label: string; icon: React.ReactNode }[] = [
+  { role: 'super_admin', label: 'Super Admin (Akses Penuh)', icon: <Shield className="w-3.5 h-3.5 text-purple-400" /> },
+  { role: 'bod', label: '1. BOD', icon: <Users className="w-3.5 h-3.5 text-rose-400" /> },
+  { role: 'bpc', label: '2. BPC', icon: <Briefcase className="w-3.5 h-3.5 text-indigo-400" /> },
+  { role: 'head_finance', label: '3. Head Finance', icon: <Coins className="w-3.5 h-3.5 text-amber-400" /> },
+  { role: 'pm', label: '4. PM', icon: <Briefcase className="w-3.5 h-3.5 text-blue-400" /> },
+  { role: 'coordinator_ss', label: '5. Cordinator/SS', icon: <HardHat className="w-3.5 h-3.5 text-emerald-400" /> },
+  { role: 'field_team', label: '6. Team Lapangan', icon: <HardHat className="w-3.5 h-3.5 text-orange-400" /> },
+  { role: 'warehouse_team', label: '7. Team Warehouse', icon: <Truck className="w-3.5 h-3.5 text-cyan-400" /> },
+];
+
 const ROLE_OPTIONS: { role: UserRole; label: string; icon: React.ReactNode }[] = [
-  { role: 'super_admin', label: 'Super Admin', icon: <Shield className="w-3.5 h-3.5 text-purple-400" /> },
+  ...HIERARCHY_ROLES,
+  // Fallbacks
   { role: 'hr_admin', label: 'HR Admin', icon: <Users className="w-3.5 h-3.5 text-emerald-400" /> },
-  { role: 'project_manager', label: 'Project Manager', icon: <Briefcase className="w-3.5 h-3.5 text-blue-400" /> },
-  { role: 'finance', label: 'Finance', icon: <Coins className="w-3.5 h-3.5 text-amber-400" /> },
-  { role: 'warehouse_logistics', label: 'Warehouse & Logistik', icon: <Truck className="w-3.5 h-3.5 text-cyan-400" /> },
-  { role: 'field_technician', label: 'Field Technician', icon: <HardHat className="w-3.5 h-3.5 text-orange-400" /> },
+  { role: 'project_manager', label: '4. PM', icon: <Briefcase className="w-3.5 h-3.5 text-blue-400" /> },
+  { role: 'finance', label: '3. Head Finance', icon: <Coins className="w-3.5 h-3.5 text-amber-400" /> },
+  { role: 'warehouse_logistics', label: '7. Team Warehouse', icon: <Truck className="w-3.5 h-3.5 text-cyan-400" /> },
+  { role: 'field_technician', label: '6. Team Lapangan', icon: <HardHat className="w-3.5 h-3.5 text-orange-400" /> },
 ];
 
 interface NotificationItem {
@@ -77,16 +91,22 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
 ];
 
 export function Header() {
-  const { user, role, logout, sidebarCollapsed, toggleSidebar, toggleMobileMenu } = useAuth();
+  const { user, role, switchRole, logout, sidebarCollapsed, toggleSidebar, toggleMobileMenu } = useAuth();
   const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showRoleMenu, setShowRoleMenu] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
+  const roleRef = useRef<HTMLDivElement>(null);
 
-  // Close notifications dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
         setShowNotifications(false);
+      }
+      if (roleRef.current && !roleRef.current.contains(event.target as Node)) {
+        setShowRoleMenu(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -97,6 +117,11 @@ export function Header() {
 
   const markAllAsRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    await logout();
   };
 
   // Smart toggle handler: on desktop toggles sidebarCollapsed, on mobile opens slide-over drawer
@@ -220,18 +245,62 @@ export function Header() {
           )}
         </div>
 
-        {/* Authenticated Role Badge */}
-        <div className="flex items-center gap-1.5 bg-zinc-900 px-2.5 py-1 rounded-lg border border-zinc-800 text-xs font-medium text-zinc-200 shadow-sm">
-          {currentRoleOption.icon}
-          <span className="hidden sm:inline">{currentRoleOption.label}</span>
-          <span className="sm:hidden">{currentRoleOption.label.split(' ')[0]}</span>
+        {/* Interactive Role Switcher Dropdown (8 Role Hierarki) */}
+        <div className="relative" ref={roleRef}>
+          <button
+            onClick={() => setShowRoleMenu((prev) => !prev)}
+            className="flex items-center gap-2 bg-zinc-900/90 hover:bg-zinc-850 px-3.5 py-1.5 rounded-xl border border-zinc-800 hover:border-zinc-700 text-xs font-medium text-zinc-200 shadow-sm transition-all focus:outline-none"
+            title="Klik untuk beralih peran hierarki (8 Role)"
+            aria-label="Pilih Role Sistem"
+          >
+            {currentRoleOption.icon}
+            <span className="font-semibold text-white tracking-wide">
+              {currentRoleOption.label}
+            </span>
+            <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 ml-1 transition-transform duration-200 ${showRoleMenu ? 'rotate-180' : ''}`} />
+          </button>
+
+          {/* Role Dropdown Menu */}
+          {showRoleMenu && (
+            <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-2xl z-50 p-2 text-zinc-100 animate-in fade-in zoom-in-95 duration-150">
+              <div className="px-2.5 py-2 text-[11px] font-semibold text-zinc-400 border-b border-zinc-800 mb-1 flex items-center justify-between">
+                <span>Struktur Hierarki Role</span>
+                <span className="text-[10px] text-zinc-500 font-mono">8 Peran</span>
+              </div>
+              <div className="space-y-0.5 max-h-72 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-800">
+                {HIERARCHY_ROLES.map((opt) => {
+                  const isSelected = role === opt.role;
+                  return (
+                    <button
+                      key={opt.role}
+                      onClick={() => {
+                        switchRole(opt.role);
+                        setShowRoleMenu(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors ${
+                        isSelected
+                          ? 'bg-blue-600/20 text-blue-400 font-semibold border border-blue-500/30'
+                          : 'text-zinc-300 hover:bg-zinc-800 hover:text-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {opt.icon}
+                        <span className="truncate">{opt.label}</span>
+                      </div>
+                      {isSelected && <Check className="w-3.5 h-3.5 text-blue-400 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* CMS Button Exclusively for Super Admin (taruh disamping role super admin) */}
         {role === 'super_admin' && (
           <Link
             href="/dashboard/cms"
-            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md shadow-blue-600/30 transition-all hover:scale-105 active:scale-95 border border-blue-400/30"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md shadow-blue-600/30 transition-all hover:scale-105 active:scale-95 border border-blue-400/30"
             title="Kelola Portal via CMS Super Admin"
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -256,14 +325,21 @@ export function Header() {
             className="w-8 h-8 rounded-full object-cover border border-zinc-700/80 shrink-0"
           />
 
-          {/* Desktop Logout Button */}
+          {/* Desktop Logout Button with active feedback */}
           <button
-            onClick={logout}
-            className="flex items-center gap-1.5 py-1.5 px-2.5 text-xs font-medium text-zinc-400 hover:text-red-400 hover:bg-zinc-900 rounded-lg transition-colors border border-transparent hover:border-zinc-800"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="flex items-center gap-1.5 py-1.5 px-2.5 text-xs font-medium text-zinc-400 hover:text-red-400 hover:bg-zinc-900 rounded-lg transition-colors border border-transparent hover:border-zinc-800 disabled:opacity-60 disabled:cursor-not-allowed"
             title="Keluar dari Akun"
           >
-            <LogOut className="w-3.5 h-3.5" />
-            <span className="hidden lg:inline text-[11px]">Keluar</span>
+            {isLoggingOut ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-400" />
+            ) : (
+              <LogOut className="w-3.5 h-3.5" />
+            )}
+            <span className="hidden lg:inline text-[11px]">
+              {isLoggingOut ? 'Keluar...' : 'Keluar'}
+            </span>
           </button>
         </div>
       </div>

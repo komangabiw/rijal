@@ -1,5 +1,14 @@
 export type UserRole =
-  | 'super_admin'
+  // 8 Role Hierarchy Resmi (Gambar 2 + Super Admin)
+  | 'super_admin'       // Super Admin (Akses Penuh Sistem)
+  | 'bod'               // 1. BOD (Board of Directors)
+  | 'bpc'               // 2. BPC (Business Planning & Control)
+  | 'head_finance'      // 3. Head Finance
+  | 'pm'                // 4. PM (Project Manager)
+  | 'coordinator_ss'    // 5. Cordinator / SS (Site Supervisor)
+  | 'field_team'        // 6. Team Lapangan
+  | 'warehouse_team'    // 7. Team Warehouse
+  // Backward compatibility aliases
   | 'hr_admin'
   | 'project_manager'
   | 'finance'

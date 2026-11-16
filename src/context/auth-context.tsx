@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Profile, UserRole } from '@/types/database';
 import { DEMO_PROFILES } from '@/lib/mock-data';
+import { createClient } from '@/lib/supabase/client';
 
 interface AuthContextType {
   user: Profile | null;
@@ -46,10 +47,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     document.cookie = `telecom_session=${newRole}; path=/; max-age=604800; SameSite=Lax`;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch {
+      // Ignore signOut errors
+    }
+
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {
+      // Ignore network errors
+    }
+
+    // Bersihkan semua cookie sesi
     document.cookie = 'telecom_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'telecom_session=; path=/; max-age=0;';
+
+    // Bersihkan local storage
     localStorage.removeItem('pt_telecom_role');
-    window.location.href = '/login';
+    localStorage.removeItem('pt_telecom_user');
+
+    // Alihkan langsung ke halaman login dengan query pembersih sesi
+    window.location.replace('/login?loggedOut=1');
   };
 
   const toggleMobileMenu = () => setMobileMenuOpen((prev) => !prev);

@@ -132,7 +132,7 @@ export default function CMSPage() {
   const [addFullName, setAddFullName] = useState('');
   const [addEmail, setAddEmail] = useState('');
   const [addPassword, setAddPassword] = useState('');
-  const [addRole, setAddRole] = useState<UserRole>('field_technician');
+  const [addRole, setAddRole] = useState<UserRole>('field_team');
   const [addDivision, setAddDivision] = useState('Field Operations - FO Team 1');
   const [addEmployeeId, setAddEmployeeId] = useState('');
   const [addPhone, setAddPhone] = useState('+62812');
@@ -655,7 +655,7 @@ on conflict (id) do update set
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
-              <h2 className="text-base font-bold text-white">Daftar Akun Karyawan & Hak Akses Role ({users.length} Akun)</h2>
+              <h2 className="text-base font-bold text-white">Daftar Akun Karyawan & Hak Akses Role (8 Role Hierarki)</h2>
               <p className="text-xs text-zinc-400">
                 Super Admin memiliki akses penuh menambah akun baru, mengubah role, divisi, data profil, dan menghapus akun:
               </p>
@@ -696,9 +696,51 @@ on conflict (id) do update set
                     </td>
                     <td className="px-4 py-3 font-mono text-[11px] text-blue-400">{p.email}</td>
                     <td className="px-4 py-3">
-                      <span className="px-2 py-0.5 rounded-full bg-zinc-800 border border-zinc-700 text-[10px] font-semibold text-zinc-200">
-                        {p.role}
-                      </span>
+                      {p.role === 'super_admin' && (
+                        <span className="px-2 py-0.5 rounded-full bg-purple-950/70 border border-purple-700/60 text-[10px] font-semibold text-purple-300">
+                          Super Admin
+                        </span>
+                      )}
+                      {p.role === 'bod' && (
+                        <span className="px-2 py-0.5 rounded-full bg-rose-950/70 border border-rose-700/60 text-[10px] font-semibold text-rose-300">
+                          1. BOD
+                        </span>
+                      )}
+                      {p.role === 'bpc' && (
+                        <span className="px-2 py-0.5 rounded-full bg-indigo-950/70 border border-indigo-700/60 text-[10px] font-semibold text-indigo-300">
+                          2. BPC
+                        </span>
+                      )}
+                      {(p.role === 'head_finance' || p.role === 'finance') && (
+                        <span className="px-2 py-0.5 rounded-full bg-amber-950/70 border border-amber-700/60 text-[10px] font-semibold text-amber-300">
+                          3. Head Finance
+                        </span>
+                      )}
+                      {(p.role === 'pm' || p.role === 'project_manager') && (
+                        <span className="px-2 py-0.5 rounded-full bg-blue-950/70 border border-blue-700/60 text-[10px] font-semibold text-blue-300">
+                          4. PM
+                        </span>
+                      )}
+                      {p.role === 'coordinator_ss' && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-700/60 text-[10px] font-semibold text-emerald-300">
+                          5. Cordinator/SS
+                        </span>
+                      )}
+                      {(p.role === 'field_team' || p.role === 'field_technician') && (
+                        <span className="px-2 py-0.5 rounded-full bg-orange-950/70 border border-orange-700/60 text-[10px] font-semibold text-orange-300">
+                          6. Team Lapangan
+                        </span>
+                      )}
+                      {(p.role === 'warehouse_team' || p.role === 'warehouse_logistics') && (
+                        <span className="px-2 py-0.5 rounded-full bg-cyan-950/70 border border-cyan-700/60 text-[10px] font-semibold text-cyan-300">
+                          7. Team Warehouse
+                        </span>
+                      )}
+                      {p.role === 'hr_admin' && (
+                        <span className="px-2 py-0.5 rounded-full bg-zinc-800 border border-zinc-700 text-[10px] font-semibold text-zinc-300">
+                          HR Admin
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-zinc-400">{p.division}</td>
                     <td className="px-4 py-3 font-mono text-zinc-400">{p.employee_id}</td>
@@ -808,11 +850,13 @@ on conflict (id) do update set
                       className="w-full appearance-none bg-zinc-950 border border-zinc-800 text-white text-xs h-9 rounded-xl pl-3 pr-9 focus:outline-none focus:border-zinc-700"
                     >
                       <option value="super_admin">Super Admin (Akses Penuh)</option>
-                      <option value="hr_admin">HR Admin (Presensi & SDM)</option>
-                      <option value="project_manager">Project Manager (RAB & Proyek)</option>
-                      <option value="finance">Finance (Reimbursement & Kas)</option>
-                      <option value="warehouse_logistics">Warehouse & Logistik (Material)</option>
-                      <option value="field_technician">Field Technician (Teknisi Lapangan)</option>
+                      <option value="bod">1. BOD (Board of Directors)</option>
+                      <option value="bpc">2. BPC (Business Planning & Control)</option>
+                      <option value="head_finance">3. Head Finance (Keuangan)</option>
+                      <option value="pm">4. PM (Project Manager)</option>
+                      <option value="coordinator_ss">5. Cordinator / SS (Site Supervisor)</option>
+                      <option value="field_team">6. Team Lapangan (Teknisi)</option>
+                      <option value="warehouse_team">7. Team Warehouse (Logistik)</option>
                     </select>
                     <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
@@ -920,11 +964,19 @@ on conflict (id) do update set
                       className="w-full appearance-none bg-zinc-950 border border-zinc-800 text-white text-xs h-9 rounded-xl pl-3 pr-9 focus:outline-none focus:border-zinc-700"
                     >
                       <option value="super_admin">Super Admin (Akses Penuh)</option>
+                      <option value="bod">1. BOD (Board of Directors)</option>
+                      <option value="bpc">2. BPC (Business Planning & Control)</option>
+                      <option value="head_finance">3. Head Finance (Keuangan)</option>
+                      <option value="pm">4. PM (Project Manager)</option>
+                      <option value="coordinator_ss">5. Cordinator / SS (Site Supervisor)</option>
+                      <option value="field_team">6. Team Lapangan (Teknisi)</option>
+                      <option value="warehouse_team">7. Team Warehouse (Logistik)</option>
+                      {/* Backward-compat */}
                       <option value="hr_admin">HR Admin (Presensi & SDM)</option>
-                      <option value="project_manager">Project Manager (RAB & Proyek)</option>
-                      <option value="finance">Finance (Reimbursement & Kas)</option>
-                      <option value="warehouse_logistics">Warehouse & Logistik (Material)</option>
-                      <option value="field_technician">Field Technician (Teknisi Lapangan)</option>
+                      <option value="project_manager">Project Manager (Lama)</option>
+                      <option value="finance">Finance (Lama)</option>
+                      <option value="warehouse_logistics">Warehouse & Logistik (Lama)</option>
+                      <option value="field_technician">Field Technician (Lama)</option>
                     </select>
                     <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>

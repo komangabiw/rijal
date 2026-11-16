@@ -21,6 +21,20 @@ export async function updateSession(request: NextRequest) {
 
   // Check evaluator / demo session cookie
   const demoSession = request.cookies.get('telecom_session')?.value;
+  const isExplicitLogout =
+    request.nextUrl.searchParams.get('loggedOut') === '1' ||
+    request.nextUrl.searchParams.get('logout') === 'true';
+
+  if (isExplicitLogout) {
+    // Bersihkan sesi dan biarkan user berada di halaman login
+    supabaseResponse.cookies.set('telecom_session', '', { path: '/', maxAge: 0 });
+    request.cookies.getAll().forEach((c) => {
+      if (c.name.startsWith('sb-') || c.name.includes('telecom')) {
+        supabaseResponse.cookies.set(c.name, '', { path: '/', maxAge: 0 });
+      }
+    });
+    return supabaseResponse;
+  }
 
   let user = null;
   try {
@@ -50,7 +64,8 @@ export async function updateSession(request: NextRequest) {
     // If Supabase request fails or is unreachable, fallback to demoSession
   }
 
-  const isAuthenticated = !!user || !!demoSession;
+  // Sesi valid jika terdapat demoSession aktif, atau akun Supabase terverifikasi
+  const isAuthenticated = !!demoSession || !!user;
 
   // Redirect unauthenticated users to /login if trying to access dashboard/modules
   if (!isAuthenticated && !isAuthPage && !isApiAuth && path !== '/') {
@@ -60,8 +75,8 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated user away from login to dashboard
-  if (isAuthenticated && isAuthPage) {
+  // Redirect authenticated user away from login to dashboard hanya jika ada sesi telecom_session aktif
+  if (!!demoSession && isAuthPage) {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
     return NextResponse.redirect(url);

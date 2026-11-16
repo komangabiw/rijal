@@ -15,8 +15,9 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 
-// Credential mapping for all roles: <role>@telekomunikasi.co.id with password <role>
+// Credential mapping for all 8 hierarchy roles: <role>@telekomunikasi.co.id with password <role>
 const ROLE_CREDENTIALS: Record<string, { role: UserRole; pass: string[] }> = {
+  // 0. Super Admin
   'superadmin@telekomunikasi.co.id': {
     role: 'super_admin',
     pass: ['superadmin', 'admin'],
@@ -25,33 +26,77 @@ const ROLE_CREDENTIALS: Record<string, { role: UserRole; pass: string[] }> = {
     role: 'super_admin',
     pass: ['superadmin', 'admin'],
   },
+  // 1. BOD
+  'bod@telekomunikasi.co.id': {
+    role: 'bod',
+    pass: ['bod', 'direksi'],
+  },
+  // 2. BPC
+  'bpc@telekomunikasi.co.id': {
+    role: 'bpc',
+    pass: ['bpc'],
+  },
+  // 3. Head Finance
+  'headfinance@telekomunikasi.co.id': {
+    role: 'head_finance',
+    pass: ['headfinance', 'finance'],
+  },
+  'finance@telekomunikasi.co.id': {
+    role: 'head_finance',
+    pass: ['headfinance', 'finance'],
+  },
+  // 4. PM
+  'pm@telekomunikasi.co.id': {
+    role: 'pm',
+    pass: ['pm', 'projectmanager'],
+  },
+  'projectmanager@telekomunikasi.co.id': {
+    role: 'pm',
+    pass: ['pm', 'projectmanager'],
+  },
+  // 5. Cordinator / SS
+  'cordinatorss@telekomunikasi.co.id': {
+    role: 'coordinator_ss',
+    pass: ['cordinatorss', 'coordinatorss', 'cordinator', 'ss'],
+  },
+  'coordinatorss@telekomunikasi.co.id': {
+    role: 'coordinator_ss',
+    pass: ['cordinatorss', 'coordinatorss', 'cordinator', 'ss'],
+  },
+  'cordinator@telekomunikasi.co.id': {
+    role: 'coordinator_ss',
+    pass: ['cordinatorss', 'coordinatorss', 'cordinator', 'ss'],
+  },
+  // 6. Team Lapangan
+  'teamlapangan@telekomunikasi.co.id': {
+    role: 'field_team',
+    pass: ['teamlapangan', 'technician', 'lapangan'],
+  },
+  'technician@telekomunikasi.co.id': {
+    role: 'field_team',
+    pass: ['teamlapangan', 'technician', 'lapangan'],
+  },
+  'lapangan@telekomunikasi.co.id': {
+    role: 'field_team',
+    pass: ['teamlapangan', 'technician', 'lapangan'],
+  },
+  // 7. Team Warehouse
+  'teamwarehouse@telekomunikasi.co.id': {
+    role: 'warehouse_team',
+    pass: ['teamwarehouse', 'warehouse', 'gudang'],
+  },
+  'warehouse@telekomunikasi.co.id': {
+    role: 'warehouse_team',
+    pass: ['teamwarehouse', 'warehouse', 'gudang'],
+  },
+  'gudang@telekomunikasi.co.id': {
+    role: 'warehouse_team',
+    pass: ['teamwarehouse', 'warehouse', 'gudang'],
+  },
+  // Legacy / fallback
   'hradmin@telekomunikasi.co.id': {
     role: 'hr_admin',
     pass: ['hradmin', 'hr'],
-  },
-  'hr@telekomunikasi.co.id': {
-    role: 'hr_admin',
-    pass: ['hradmin', 'hr'],
-  },
-  'projectmanager@telekomunikasi.co.id': {
-    role: 'project_manager',
-    pass: ['projectmanager', 'pm'],
-  },
-  'pm@telekomunikasi.co.id': {
-    role: 'project_manager',
-    pass: ['projectmanager', 'pm'],
-  },
-  'finance@telekomunikasi.co.id': {
-    role: 'finance',
-    pass: ['finance'],
-  },
-  'warehouse@telekomunikasi.co.id': {
-    role: 'warehouse_logistics',
-    pass: ['warehouse'],
-  },
-  'technician@telekomunikasi.co.id': {
-    role: 'field_technician',
-    pass: ['technician'],
   },
 };
 

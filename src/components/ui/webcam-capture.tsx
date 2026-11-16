@@ -10,15 +10,25 @@ import {
   AlertCircle,
   Loader2,
   SwitchCamera,
+  Clock,
+  MapPin,
+  Navigation,
 } from 'lucide-react';
 import { dataURLtoBlob } from '@/lib/storage';
 
 interface WebcamCaptureProps {
   onCapture: (blob: Blob, previewUrl: string) => void;
   className?: string;
+  locationName?: string;
+  coordinates?: { lat: number; lng: number };
 }
 
-export function WebcamCapture({ onCapture, className = '' }: WebcamCaptureProps) {
+export function WebcamCapture({
+  onCapture,
+  className = '',
+  locationName,
+  coordinates,
+}: WebcamCaptureProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -29,6 +39,25 @@ export function WebcamCapture({ onCapture, className = '' }: WebcamCaptureProps)
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+
+  // Live real-time clock for viewfinder HUD
+  const [currentTime, setCurrentTime] = useState<string>('');
+
+  useEffect(() => {
+    const updateClock = () => {
+      const now = new Date();
+      const datePart = now.toLocaleDateString('id-ID', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
+      const timePart = now.toLocaleTimeString('id-ID', { hour12: false });
+      setCurrentTime(`${datePart}, ${timePart}`);
+    };
+    updateClock();
+    const timer = setInterval(updateClock, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Callback ref to bind stream as soon as video DOM node mounts
   const setVideoNode = useCallback(
@@ -75,7 +104,6 @@ export function WebcamCapture({ onCapture, className = '' }: WebcamCaptureProps)
           audio: false,
         });
       } catch (errMode) {
-        // Fallback to basic video constraint if exact facingMode is not supported (e.g. desktop webcam)
         console.warn('Fallback to basic video constraint:', errMode);
         mediaStream = await navigator.mediaDevices.getUserMedia({
           video: true,
@@ -112,7 +140,6 @@ export function WebcamCapture({ onCapture, className = '' }: WebcamCaptureProps)
     startCamera(nextMode);
   };
 
-  // Cleanup tracks on unmount
   useEffect(() => {
     return () => {
       if (stream) {
@@ -140,6 +167,41 @@ export function WebcamCapture({ onCapture, className = '' }: WebcamCaptureProps)
         ctx.scale(-1, 1);
       }
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Reset matrix transformation so watermark text is NOT mirrored
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+      // Draw official field inspection watermark banner at bottom
+      const bannerHeight = 84;
+      const bannerY = canvas.height - bannerHeight;
+
+      // Dark gradient overlay for contrast
+      const gradient = ctx.createLinearGradient(0, bannerY - 15, 0, canvas.height);
+      gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      gradient.addColorStop(0.3, 'rgba(15, 23, 42, 0.82)');
+      gradient.addColorStop(1, 'rgba(15, 23, 42, 0.95)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, bannerY - 15, canvas.width, bannerHeight + 15);
+
+      // Line 1: Live Timestamp with clock icon
+      ctx.fillStyle = '#f59e0b'; // Amber-500
+      ctx.font = 'bold 15px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      ctx.fillText(`🕒 ${currentTime} WIB`, 16, bannerY + 22);
+
+      // Line 2: Verified Location Name
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '500 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      const locText = locationName || 'Site Lapangan PT Telekomunikasi';
+      ctx.fillText(`📍 ${locText.length > 50 ? locText.substring(0, 50) + '...' : locText}`, 16, bannerY + 44);
+
+      // Line 3: GPS Coordinates & Enterprise Tag
+      ctx.fillStyle = '#34d399'; // Emerald-400
+      ctx.font = '600 12px monospace';
+      const coordsText = coordinates
+        ? `🌐 GPS: ${coordinates.lat.toFixed(6)}, ${coordinates.lng.toFixed(6)}`
+        : '🌐 GPS: Terverifikasi Geofence';
+      ctx.fillText(`${coordsText}  •  PT TELEKOMUNIKASI ERP`, 16, bannerY + 65);
+
       const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
       const blob = dataURLtoBlob(dataUrl);
 
@@ -178,7 +240,7 @@ export function WebcamCapture({ onCapture, className = '' }: WebcamCaptureProps)
 
       {/* Captured Image Preview */}
       {capturedImage ? (
-        <div className="relative rounded-xl overflow-hidden border-2 border-emerald-500 bg-slate-950 aspect-video max-h-60 flex items-center justify-center shadow-md">
+        <div className="relative rounded-xl overflow-hidden border-2 border-emerald-500 bg-slate-950 aspect-video max-h-64 flex items-center justify-center shadow-md">
           <img
             src={capturedImage}
             alt="Selfie Preview"
@@ -186,7 +248,7 @@ export function WebcamCapture({ onCapture, className = '' }: WebcamCaptureProps)
           />
           <div className="absolute top-2.5 right-2.5 bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            Foto Berhasil Ditangkap
+            Foto & Geotag Berhasil
           </div>
           <Button
             type="button"
@@ -201,7 +263,7 @@ export function WebcamCapture({ onCapture, className = '' }: WebcamCaptureProps)
         </div>
       ) : isCameraActive ? (
         /* Active Video Stream Container */
-        <div className="relative rounded-xl overflow-hidden border-2 border-blue-500 bg-slate-950 aspect-video max-h-60 flex items-center justify-center shadow-md">
+        <div className="relative rounded-xl overflow-hidden border-2 border-blue-500 bg-slate-950 aspect-video max-h-64 flex items-center justify-center shadow-md">
           <video
             ref={setVideoNode}
             autoPlay
@@ -218,8 +280,28 @@ export function WebcamCapture({ onCapture, className = '' }: WebcamCaptureProps)
           {!isVideoReady && (
             <div className="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center text-white space-y-2 z-10">
               <Loader2 className="w-7 h-7 animate-spin text-blue-500" />
-              <p className="text-xs font-semibold">Mengaktifkan sensor kamera...</p>
-              <p className="text-[10px] text-slate-400">Menyesuaikan resolusi & fokus</p>
+              <p className="text-xs font-semibold">Mengaktifkan sensor kamera & GPS...</p>
+              <p className="text-[10px] text-slate-400">Menyiapkan watermark presensi</p>
+            </div>
+          )}
+
+          {/* Viewfinder HUD Overlay: Jam, Lokasi, dan Koordinat Real-time */}
+          {isVideoReady && (
+            <div className="absolute top-2.5 left-2.5 z-20 pointer-events-none bg-slate-950/75 backdrop-blur-md text-white p-2.5 rounded-lg border border-white/20 text-[10px] space-y-1 max-w-[85%] shadow-lg">
+              <div className="flex items-center gap-1.5 font-bold text-amber-400">
+                <Clock className="w-3.5 h-3.5 shrink-0" />
+                <span className="font-mono text-[11px]">{currentTime} WIB</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-slate-200">
+                <MapPin className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                <span className="truncate font-medium">{locationName || 'Kantor / Site Lapangan'}</span>
+              </div>
+              {coordinates && (
+                <div className="flex items-center gap-1 font-mono text-emerald-400 text-[9.5px]">
+                  <Navigation className="w-3 h-3 shrink-0" />
+                  <span>Lat: {coordinates.lat.toFixed(6)}, Lng: {coordinates.lng.toFixed(6)}</span>
+                </div>
+              )}
             </div>
           )}
 
@@ -229,7 +311,7 @@ export function WebcamCapture({ onCapture, className = '' }: WebcamCaptureProps)
               type="button"
               onClick={toggleCameraFacing}
               title="Ganti Kamera Depan/Belakang"
-              className="p-1.5 rounded-full bg-slate-900/80 hover:bg-slate-900 text-white border border-slate-700 backdrop-blur-sm transition-colors"
+              className="p-1.5 rounded-full bg-slate-900/80 hover:bg-slate-900 text-white border border-slate-700 backdrop-blur-sm transition-colors shadow"
             >
               <SwitchCamera className="w-4 h-4" />
             </button>
@@ -262,10 +344,10 @@ export function WebcamCapture({ onCapture, className = '' }: WebcamCaptureProps)
           <Camera className="w-8 h-8 text-blue-600 mx-auto" />
           <div className="space-y-0.5">
             <p className="text-xs font-bold text-slate-800">
-              Kamera Selfie Clock-In & Face Verification
+              Kamera Selfie Clock-In & Watermark Geotag
             </p>
             <p className="text-[11px] text-slate-500">
-              Wajib menyertakan foto wajah terkini di lokasi proyek/kantor
+              Waktu, nama lokasi, dan koordinat GPS dicap otomatis pada foto
             </p>
           </div>
 

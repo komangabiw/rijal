@@ -19,7 +19,24 @@ import {
   Navigation,
   ShieldCheck,
   RotateCw,
+  ZoomIn,
+  X,
+  ExternalLink,
+  Clock,
+  User,
 } from 'lucide-react';
+
+interface PhotoLightboxData {
+  url: string;
+  name: string;
+  employeeId?: string;
+  date: string;
+  time?: string;
+  address?: string;
+  status: string;
+  distance?: number;
+  notes?: string;
+}
 
 export default function AttendancePage() {
   const { user } = useAuth();
@@ -30,6 +47,9 @@ export default function AttendancePage() {
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selfieBlob, setSelfieBlob] = useState<Blob | null>(null);
+
+  // Lightbox Modal state
+  const [activePhoto, setActivePhoto] = useState<PhotoLightboxData | null>(null);
 
   // Live GPS state
   const [coords, setCoords] = useState<{ lat: number; lng: number }>({
@@ -68,6 +88,8 @@ export default function AttendancePage() {
 
   const todayStr = new Date().toISOString().slice(0, 10);
   const todayRecord = attendances.find((a) => a.user_id === user?.id && a.date === todayStr);
+
+  const activeOfficeObj = DEMO_OFFICES.find((o) => o.id === selectedOffice);
 
   const handleClockIn = async () => {
     if (!selfieBlob) {
@@ -189,15 +211,41 @@ export default function AttendancePage() {
                       <strong>Jarak Geofence:</strong> {todayRecord.clock_in_distance_meters || 15} meter (Valid)
                     </p>
                   </div>
-                  <div className="pt-2 flex items-center gap-2.5">
-                    <img
-                      src={todayRecord.clock_in_photo_url || ''}
-                      alt="Selfie"
-                      className="w-14 h-14 rounded-lg object-cover border-2 border-emerald-400 shadow"
-                    />
-                    <div className="text-[11px] text-emerald-800">
-                      <span className="font-semibold block">Selfie Live Terverifikasi</span>
-                      <span className="text-emerald-600 font-mono text-[10px]">Supabase Storage: attendance-photos</span>
+
+                  {/* Clickable Selfie Preview in Today Card */}
+                  <div className="pt-2 flex items-center gap-3">
+                    <div
+                      onClick={() =>
+                        todayRecord.clock_in_photo_url &&
+                        setActivePhoto({
+                          url: todayRecord.clock_in_photo_url,
+                          name: user?.full_name || 'Teknisi Lapangan',
+                          employeeId: 'EMP-TEC',
+                          date: todayRecord.date,
+                          time: formatDateTime(todayRecord.clock_in_time),
+                          address: todayRecord.clock_in_address || 'Site Lapangan',
+                          status: todayRecord.status,
+                          distance: todayRecord.clock_in_distance_meters || 15,
+                          notes: todayRecord.notes || undefined,
+                        })
+                      }
+                      className="group relative cursor-pointer"
+                      title="Klik untuk melihat foto ukuran penuh"
+                    >
+                      <img
+                        src={todayRecord.clock_in_photo_url || ''}
+                        alt="Selfie"
+                        className="w-16 h-16 rounded-xl object-cover border-2 border-emerald-400 shadow group-hover:opacity-90 group-hover:scale-105 transition-all"
+                      />
+                      <div className="absolute inset-0 bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
+                        <ZoomIn className="w-5 h-5" />
+                      </div>
+                    </div>
+                    <div className="text-[11px] text-emerald-800 space-y-0.5">
+                      <span className="font-bold block">Selfie Live Terverifikasi</span>
+                      <span className="text-emerald-700 block text-[10px]">
+                        Klik foto di samping untuk melihat hasil geotag watermark
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -264,10 +312,14 @@ export default function AttendancePage() {
                     </p>
                   </div>
 
-                  {/* Live Selfie Camera Capture Component */}
+                  {/* Live Selfie Camera Capture Component with HUD & Watermarking */}
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-700">Foto Selfie Bukti Kehadiran</label>
+                    <label className="text-xs font-semibold text-slate-700">
+                      Foto Selfie Bukti Kehadiran (Dengan Cap Jam & Koordinat)
+                    </label>
                     <WebcamCapture
+                      locationName={activeOfficeObj ? activeOfficeObj.name : 'Kantor Pusat PT Telekomunikasi'}
+                      coordinates={coords}
                       onCapture={(blob) => setSelfieBlob(blob)}
                     />
                   </div>
@@ -350,7 +402,7 @@ export default function AttendancePage() {
                 Rekap Presensi Karyawan & Teknisi
               </CardTitle>
               <CardDescription className="text-xs text-slate-500">
-                Daftar log kehadiran terkini dengan bukti foto dan verifikasi GPS (geser tabel untuk detail)
+                Klik pada foto thumbnail karyawan untuk memperbesar dan melihat detail bukti kehadiran
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -365,7 +417,7 @@ export default function AttendancePage() {
             <table className="w-full text-left text-xs min-w-[680px]">
               <thead className="bg-slate-50 text-slate-600 uppercase font-semibold border-b border-slate-200">
                 <tr>
-                  <th className="p-3">Karyawan</th>
+                  <th className="p-3">Karyawan & Foto Bukti</th>
                   <th className="p-3">Tanggal</th>
                   <th className="p-3">Jam Masuk</th>
                   <th className="p-3">Status</th>
@@ -378,12 +430,36 @@ export default function AttendancePage() {
                 {attendances.map((att) => (
                   <tr key={att.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="p-3">
-                      <div className="flex items-center gap-2.5">
-                        <img
-                          src={att.clock_in_photo_url || ''}
-                          alt="Selfie"
-                          className="w-9 h-9 rounded-full object-cover border border-slate-300"
-                        />
+                      <div className="flex items-center gap-3">
+                        {/* Clickable Image with Zoom Icon */}
+                        <div
+                          onClick={() =>
+                            att.clock_in_photo_url &&
+                            setActivePhoto({
+                              url: att.clock_in_photo_url,
+                              name: att.profile?.full_name || 'Teknisi',
+                              employeeId: att.profile?.employee_id || 'EMP-TEC',
+                              date: att.date,
+                              time: formatDateTime(att.clock_in_time),
+                              address: att.clock_in_address || 'Site Lapangan',
+                              status: att.status,
+                              distance: att.clock_in_distance_meters || 15,
+                              notes: att.notes || undefined,
+                            })
+                          }
+                          className="group relative cursor-pointer shrink-0"
+                          title="Klik untuk memperbesar foto selfie"
+                        >
+                          <img
+                            src={att.clock_in_photo_url || ''}
+                            alt="Selfie"
+                            className="w-10 h-10 rounded-full object-cover border-2 border-slate-200 group-hover:border-blue-500 group-hover:scale-105 transition-all shadow-sm"
+                          />
+                          <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
+                            <ZoomIn className="w-4 h-4" />
+                          </div>
+                        </div>
+
                         <div>
                           <p className="font-semibold text-slate-900">{att.profile?.full_name || 'Teknisi'}</p>
                           <p className="text-[10px] text-slate-500 font-mono">{att.profile?.employee_id || 'EMP-TEC'}</p>
@@ -419,6 +495,97 @@ export default function AttendancePage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Lightbox Modal: Detail Foto Bukti Presensi */}
+      {activePhoto && (
+        <div
+          onClick={() => setActivePhoto(null)}
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 transition-opacity"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-slate-300 overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200"
+          >
+            {/* Modal Header */}
+            <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CalendarCheck2 className="w-5 h-5 text-blue-600" />
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Detail Bukti Presensi Selfie</h3>
+                  <p className="text-[11px] text-slate-500">{activePhoto.name} ({activePhoto.employeeId})</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setActivePhoto(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Photo Container */}
+            <div className="p-4 bg-slate-900 flex items-center justify-center relative overflow-hidden">
+              <img
+                src={activePhoto.url}
+                alt="Bukti Presensi"
+                className="max-h-[50vh] w-auto max-w-full rounded-xl object-contain shadow-2xl border border-white/10"
+              />
+            </div>
+
+            {/* Metadata Footer */}
+            <div className="p-4 space-y-3 bg-white overflow-y-auto">
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 space-y-0.5">
+                  <span className="text-[10px] text-slate-400 font-semibold uppercase block flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-amber-500" /> Waktu Presensi
+                  </span>
+                  <span className="font-semibold text-slate-800">{activePhoto.time || activePhoto.date}</span>
+                </div>
+                <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 space-y-0.5">
+                  <span className="text-[10px] text-slate-400 font-semibold uppercase block flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3 text-emerald-500" /> Status & Geofence
+                  </span>
+                  <span className="font-semibold text-slate-800 capitalize">
+                    {activePhoto.status.replace('_', ' ')} • {activePhoto.distance || 15}m
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs space-y-1">
+                <span className="text-[10px] text-slate-400 font-semibold uppercase block flex items-center gap-1">
+                  <MapPin className="w-3 h-3 text-red-500" /> Lokasi Site Lapangan
+                </span>
+                <p className="font-medium text-slate-800">{activePhoto.address}</p>
+                {activePhoto.notes && (
+                  <p className="text-[11px] text-slate-500 pt-1 border-t border-slate-200">
+                    Catatan: &ldquo;{activePhoto.notes}&rdquo;
+                  </p>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2 pt-1">
+                <a
+                  href={activePhoto.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Buka Tab Penuh
+                </a>
+                <Button
+                  onClick={() => setActivePhoto(null)}
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4"
+                >
+                  Tutup
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -33,6 +33,7 @@ import {
   Upload,
   Check,
   RotateCw,
+  ChevronDown,
 } from 'lucide-react';
 
 export default function LogisticsPage() {
@@ -515,32 +516,38 @@ export default function LogisticsPage() {
               <form onSubmit={handleDispatch} className="space-y-3.5">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-zinc-300">Gudang Asal</label>
-                  <select
-                    value={sourceWhId}
-                    onChange={(e) => setSourceWhId(e.target.value)}
-                    className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white"
-                  >
-                    {DEMO_WAREHOUSES.map((w) => (
-                      <option key={w.id} value={w.id}>
-                        {w.code} - {w.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={sourceWhId}
+                      onChange={(e) => setSourceWhId(e.target.value)}
+                      className="w-full appearance-none text-xs bg-zinc-800 border border-zinc-700 rounded-lg pl-3 pr-9 py-2 text-white focus:outline-none"
+                    >
+                      {DEMO_WAREHOUSES.map((w) => (
+                        <option key={w.id} value={w.id}>
+                          {w.code} - {w.name}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
                 </div>
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-zinc-300">Destinasi Proyek</label>
-                  <select
-                    value={destProjId}
-                    onChange={(e) => setDestProjId(e.target.value)}
-                    className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white"
-                  >
-                    {DEMO_PROJECTS.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.project_code} - {p.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={destProjId}
+                      onChange={(e) => setDestProjId(e.target.value)}
+                      className="w-full appearance-none text-xs bg-zinc-800 border border-zinc-700 rounded-lg pl-3 pr-9 py-2 text-white focus:outline-none"
+                    >
+                      {DEMO_PROJECTS.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.project_code} - {p.name}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">

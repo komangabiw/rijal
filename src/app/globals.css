@@ -79,3 +79,19 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #3f3f46;
 }
+
+/* Hilangkan panah spinner atas-bawah pada input number di seluruh aplikasi */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+input[type="number"] {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
+
+/* Pastikan dropdown select tidak mepet ke ujung border */
+select {
+  padding-right: 2.25rem !important;
+}

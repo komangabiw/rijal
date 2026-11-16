@@ -19,6 +19,7 @@ import {
   X,
   Warehouse as WarehouseIcon,
   RotateCw,
+  ChevronDown,
 } from 'lucide-react';
 
 export default function WarehousePage() {
@@ -195,18 +196,21 @@ export default function WarehousePage() {
                 />
               </div>
 
-              <select
-                value={selectedWarehouse}
-                onChange={(e) => setSelectedWarehouse(e.target.value)}
-                className="text-xs bg-zinc-800 border border-zinc-700 text-white rounded-lg p-1.5 focus:outline-none"
-              >
-                <option value="all">Semua Gudang</option>
-                {DEMO_WAREHOUSES.map((w) => (
-                  <option key={w.id} value={w.id}>
-                    {w.code}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  value={selectedWarehouse}
+                  onChange={(e) => setSelectedWarehouse(e.target.value)}
+                  className="appearance-none text-xs bg-zinc-800 border border-zinc-700 text-white rounded-lg pl-2.5 pr-7 py-1.5 focus:outline-none"
+                >
+                  <option value="all">Semua Gudang</option>
+                  {DEMO_WAREHOUSES.map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.code}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -289,41 +293,49 @@ export default function WarehousePage() {
               <form onSubmit={handleInboundStock} className="space-y-3.5">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-zinc-300">Pilih Material</label>
-                  <select
-                    value={selectedItemId}
-                    onChange={(e) => setSelectedItemId(e.target.value)}
-                    className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  >
-                    {DEMO_ITEMS.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.sku} - {item.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={selectedItemId}
+                      onChange={(e) => setSelectedItemId(e.target.value)}
+                      className="w-full appearance-none text-xs bg-zinc-800 border border-zinc-700 rounded-lg pl-3 pr-9 py-2 text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    >
+                      {DEMO_ITEMS.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.sku} - {item.name}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
                 </div>
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-zinc-300">Pilih Gudang Tujuan</label>
-                  <select
-                    value={selectedWarehouseId}
-                    onChange={(e) => setSelectedWarehouseId(e.target.value)}
-                    className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  >
-                    {DEMO_WAREHOUSES.map((w) => (
-                      <option key={w.id} value={w.id}>
-                        {w.code} - {w.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={selectedWarehouseId}
+                      onChange={(e) => setSelectedWarehouseId(e.target.value)}
+                      className="w-full appearance-none text-xs bg-zinc-800 border border-zinc-700 rounded-lg pl-3 pr-9 py-2 text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    >
+                      {DEMO_WAREHOUSES.map((w) => (
+                        <option key={w.id} value={w.id}>
+                          {w.code} - {w.name}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-zinc-300">Jumlah Masuk</label>
                     <Input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       value={inboundQty}
-                      onChange={(e) => setInboundQty(e.target.value)}
+                      onChange={(e) => setInboundQty(e.target.value.replace(/\D/g, ''))}
                       required
                       placeholder="1000"
                       className="text-xs bg-zinc-800/90 border-zinc-700 text-white"

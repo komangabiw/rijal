@@ -33,6 +33,7 @@ import {
   LocateFixed,
   Map,
   ExternalLink,
+  ChevronDown,
 } from 'lucide-react';
 
 interface Announcement {
@@ -793,18 +794,21 @@ on conflict (id) do update set
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs text-zinc-300">Role Sistem</Label>
-                  <select
-                    value={addRole}
-                    onChange={(e) => setAddRole(e.target.value as UserRole)}
-                    className="mt-1 w-full bg-zinc-950 border border-zinc-800 text-white text-xs h-9 rounded-xl px-2.5 focus:outline-none"
-                  >
-                    <option value="super_admin">Super Admin (Akses Penuh)</option>
-                    <option value="hr_admin">HR Admin (Presensi & SDM)</option>
-                    <option value="project_manager">Project Manager (RAB & Proyek)</option>
-                    <option value="finance">Finance (Reimbursement & Kas)</option>
-                    <option value="warehouse_logistics">Warehouse & Logistik (Material)</option>
-                    <option value="field_technician">Field Technician (Teknisi Lapangan)</option>
-                  </select>
+                  <div className="relative mt-1">
+                    <select
+                      value={addRole}
+                      onChange={(e) => setAddRole(e.target.value as UserRole)}
+                      className="w-full appearance-none bg-zinc-950 border border-zinc-800 text-white text-xs h-9 rounded-xl pl-3 pr-9 focus:outline-none focus:border-zinc-700"
+                    >
+                      <option value="super_admin">Super Admin (Akses Penuh)</option>
+                      <option value="hr_admin">HR Admin (Presensi & SDM)</option>
+                      <option value="project_manager">Project Manager (RAB & Proyek)</option>
+                      <option value="finance">Finance (Reimbursement & Kas)</option>
+                      <option value="warehouse_logistics">Warehouse & Logistik (Material)</option>
+                      <option value="field_technician">Field Technician (Teknisi Lapangan)</option>
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
                 </div>
 
                 <div>
@@ -902,18 +906,21 @@ on conflict (id) do update set
                 </div>
                 <div>
                   <Label className="text-xs text-zinc-300">Ganti Hak Akses Role</Label>
-                  <select
-                    value={editingUser.role}
-                    onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value as UserRole })}
-                    className="mt-1 w-full bg-zinc-950 border border-zinc-800 text-white text-xs h-9 rounded-xl px-2.5 focus:outline-none"
-                  >
-                    <option value="super_admin">Super Admin (Akses Penuh)</option>
-                    <option value="hr_admin">HR Admin (Presensi & SDM)</option>
-                    <option value="project_manager">Project Manager (RAB & Proyek)</option>
-                    <option value="finance">Finance (Reimbursement & Kas)</option>
-                    <option value="warehouse_logistics">Warehouse & Logistik (Material)</option>
-                    <option value="field_technician">Field Technician (Teknisi Lapangan)</option>
-                  </select>
+                  <div className="relative mt-1">
+                    <select
+                      value={editingUser.role}
+                      onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value as UserRole })}
+                      className="w-full appearance-none bg-zinc-950 border border-zinc-800 text-white text-xs h-9 rounded-xl pl-3 pr-9 focus:outline-none focus:border-zinc-700"
+                    >
+                      <option value="super_admin">Super Admin (Akses Penuh)</option>
+                      <option value="hr_admin">HR Admin (Presensi & SDM)</option>
+                      <option value="project_manager">Project Manager (RAB & Proyek)</option>
+                      <option value="finance">Finance (Reimbursement & Kas)</option>
+                      <option value="warehouse_logistics">Warehouse & Logistik (Material)</option>
+                      <option value="field_technician">Field Technician (Teknisi Lapangan)</option>
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
                 </div>
               </div>
 
@@ -947,14 +954,17 @@ on conflict (id) do update set
                 </div>
                 <div>
                   <Label className="text-xs text-zinc-300">Status Akun</Label>
-                  <select
-                    value={editingUser.is_active ? 'active' : 'inactive'}
-                    onChange={(e) => setEditingUser({ ...editingUser, is_active: e.target.value === 'active' })}
-                    className="mt-1 w-full bg-zinc-950 border border-zinc-800 text-white text-xs h-9 rounded-xl px-2.5 focus:outline-none"
-                  >
-                    <option value="active">Aktif</option>
-                    <option value="inactive">Nonaktif</option>
-                  </select>
+                  <div className="relative mt-1">
+                    <select
+                      value={editingUser.is_active ? 'active' : 'inactive'}
+                      onChange={(e) => setEditingUser({ ...editingUser, is_active: e.target.value === 'active' })}
+                      className="w-full appearance-none bg-zinc-950 border border-zinc-800 text-white text-xs h-9 rounded-xl pl-3 pr-9 focus:outline-none focus:border-zinc-700"
+                    >
+                      <option value="active">Aktif</option>
+                      <option value="inactive">Nonaktif</option>
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
                 </div>
               </div>
 
@@ -1148,14 +1158,17 @@ on conflict (id) do update set
 
               <div>
                 <Label className="text-xs text-zinc-300">Status Lokasi</Label>
-                <select
-                  value={officeIsActive ? 'active' : 'inactive'}
-                  onChange={(e) => setOfficeIsActive(e.target.value === 'active')}
-                  className="mt-1 w-full bg-zinc-950 border border-zinc-800 text-white text-xs h-9 rounded-xl px-2.5 focus:outline-none"
-                >
-                  <option value="active">Aktif (Dapat dipilih oleh karyawan)</option>
-                  <option value="inactive">Nonaktif (Situs ditutup sementara)</option>
-                </select>
+                <div className="relative mt-1">
+                  <select
+                    value={officeIsActive ? 'active' : 'inactive'}
+                    onChange={(e) => setOfficeIsActive(e.target.value === 'active')}
+                    className="w-full appearance-none bg-zinc-950 border border-zinc-800 text-white text-xs h-9 rounded-xl pl-3 pr-9 focus:outline-none focus:border-zinc-700"
+                  >
+                    <option value="active">Aktif (Dapat dipilih oleh karyawan)</option>
+                    <option value="inactive">Nonaktif (Situs ditutup sementara)</option>
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
               </div>
 
               <div className="pt-2 flex items-center justify-end gap-2 border-t border-zinc-800">
@@ -1293,14 +1306,17 @@ on conflict (id) do update set
 
               <div>
                 <Label className="text-xs text-zinc-300">Status Lokasi</Label>
-                <select
-                  value={editingOffice.is_active ? 'active' : 'inactive'}
-                  onChange={(e) => setEditingOffice({ ...editingOffice, is_active: e.target.value === 'active' })}
-                  className="mt-1 w-full bg-zinc-950 border border-zinc-800 text-white text-xs h-9 rounded-xl px-2.5 focus:outline-none"
-                >
-                  <option value="active">Aktif</option>
-                  <option value="inactive">Nonaktif</option>
-                </select>
+                <div className="relative mt-1">
+                  <select
+                    value={editingOffice.is_active ? 'active' : 'inactive'}
+                    onChange={(e) => setEditingOffice({ ...editingOffice, is_active: e.target.value === 'active' })}
+                    className="w-full appearance-none bg-zinc-950 border border-zinc-800 text-white text-xs h-9 rounded-xl pl-3 pr-9 focus:outline-none focus:border-zinc-700"
+                  >
+                    <option value="active">Aktif</option>
+                    <option value="inactive">Nonaktif</option>
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
               </div>
 
               <div className="pt-2 flex items-center justify-end gap-2 border-t border-zinc-800">
@@ -1352,28 +1368,34 @@ on conflict (id) do update set
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs text-zinc-300">Kategori</Label>
-                    <select
-                      value={newCategory}
-                      onChange={(e) => setNewCategory(e.target.value as any)}
-                      className="mt-1 w-full bg-zinc-950 border border-zinc-800 text-white text-xs h-9 rounded-xl px-2.5 focus:outline-none"
-                    >
-                      <option value="Operasional">Operasional</option>
-                      <option value="K3 & Safety">K3 & Safety</option>
-                      <option value="Maintenance">Maintenance</option>
-                    </select>
+                    <div className="relative mt-1">
+                      <select
+                        value={newCategory}
+                        onChange={(e) => setNewCategory(e.target.value as any)}
+                        className="w-full appearance-none bg-zinc-950 border border-zinc-800 text-white text-xs h-9 rounded-xl pl-3 pr-9 focus:outline-none focus:border-zinc-700"
+                      >
+                        <option value="Operasional">Operasional</option>
+                        <option value="K3 & Safety">K3 & Safety</option>
+                        <option value="Maintenance">Maintenance</option>
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
                   </div>
 
                   <div>
                     <Label className="text-xs text-zinc-300">Prioritas</Label>
-                    <select
-                      value={newUrgency}
-                      onChange={(e) => setNewUrgency(e.target.value as any)}
-                      className="mt-1 w-full bg-zinc-950 border border-zinc-800 text-white text-xs h-9 rounded-xl px-2.5 focus:outline-none"
-                    >
-                      <option value="info">Info Normal</option>
-                      <option value="warning">Penting (Warning)</option>
-                      <option value="urgent">Mendesak (Urgent)</option>
-                    </select>
+                    <div className="relative mt-1">
+                      <select
+                        value={newUrgency}
+                        onChange={(e) => setNewUrgency(e.target.value as any)}
+                        className="w-full appearance-none bg-zinc-950 border border-zinc-800 text-white text-xs h-9 rounded-xl pl-3 pr-9 focus:outline-none focus:border-zinc-700"
+                      >
+                        <option value="info">Info Normal</option>
+                        <option value="warning">Penting (Warning)</option>
+                        <option value="urgent">Mendesak (Urgent)</option>
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
                   </div>
                 </div>
 

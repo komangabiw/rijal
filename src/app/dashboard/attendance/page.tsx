@@ -25,6 +25,7 @@ import {
   Clock,
   User,
   AlertTriangle,
+  ChevronDown,
 } from 'lucide-react';
 
 // Haversine formula to calculate distance between user and office in meters
@@ -345,33 +346,39 @@ export default function AttendancePage() {
                   {/* Status Selection */}
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-zinc-300">Status Kehadiran</label>
-                    <select
-                      value={attendanceType}
-                      onChange={(e) => setAttendanceType(e.target.value as AttendanceStatus)}
-                      className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    >
-                      <option value="present">Hadir Normal (Present)</option>
-                      <option value="field_duty">Dinas Luar / Site Lapangan (Field Duty)</option>
-                      <option value="late">Terlambat (Late)</option>
-                      <option value="sick">Sakit (Sick)</option>
-                      <option value="leave">Izin / Cuti (Leave)</option>
-                    </select>
+                    <div className="relative">
+                      <select
+                        value={attendanceType}
+                        onChange={(e) => setAttendanceType(e.target.value as AttendanceStatus)}
+                        className="w-full appearance-none text-xs bg-zinc-800 border border-zinc-700 rounded-xl pl-3 pr-9 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      >
+                        <option value="present">Hadir Normal (Present)</option>
+                        <option value="field_duty">Dinas Luar / Site Lapangan (Field Duty)</option>
+                        <option value="late">Terlambat (Late)</option>
+                        <option value="sick">Sakit (Sick)</option>
+                        <option value="leave">Izin / Cuti (Leave)</option>
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
                   </div>
 
                   {/* Registered Location / Geofence Check */}
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-zinc-300">Pilih Lokasi Kantor / Hub Proyek</label>
-                    <select
-                      value={selectedOffice}
-                      onChange={(e) => setSelectedOffice(e.target.value)}
-                      className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    >
-                      {offices.map((off) => (
-                        <option key={off.id} value={off.id}>
-                          {off.name} (Batas Radius: {off.radius_meters}m)
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <select
+                        value={selectedOffice}
+                        onChange={(e) => setSelectedOffice(e.target.value)}
+                        className="w-full appearance-none text-xs bg-zinc-800 border border-zinc-700 rounded-xl pl-3 pr-9 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      >
+                        {offices.map((off) => (
+                          <option key={off.id} value={off.id}>
+                            {off.name} (Batas Radius: {off.radius_meters}m)
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
                   </div>
 
                   {/* Geofence Distance Status (Coordinates hidden per security policy) */}

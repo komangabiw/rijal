@@ -35,9 +35,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const targetProfile = DEMO_PROFILES.find((p) => p.role === newRole) || DEMO_PROFILES[0];
     setCurrentUser(targetProfile);
     localStorage.setItem('pt_telecom_role', newRole);
+    document.cookie = `telecom_session=${newRole}; path=/; max-age=604800; SameSite=Lax`;
   };
 
   const logout = () => {
+    document.cookie = 'telecom_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    localStorage.removeItem('pt_telecom_role');
     window.location.href = '/login';
   };
 
